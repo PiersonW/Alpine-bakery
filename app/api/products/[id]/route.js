@@ -4,12 +4,12 @@ import { getDb, ensureSchema } from "../../../../lib/db";
 export async function PUT(request, { params }) {
   await ensureSchema();
   const body = await request.json();
-  const { name, description, price_cents, image_url, available } = body;
+  const { name, description, price_cents, image_url, available, category } = body;
 
   const db = getDb();
   await db.execute({
     sql: `UPDATE products
-          SET name = ?, description = ?, price_cents = ?, image_url = ?, available = ?
+          SET name = ?, description = ?, price_cents = ?, image_url = ?, available = ?, category = ?
           WHERE id = ?`,
     args: [
       name,
@@ -17,6 +17,7 @@ export async function PUT(request, { params }) {
       Math.round(price_cents),
       image_url || null,
       available ? 1 : 0,
+      category || "Other",
       params.id,
     ],
   });
