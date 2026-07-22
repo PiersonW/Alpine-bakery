@@ -2,6 +2,7 @@ import Navbar from "../components/Navbar";
 import Ridge from "../components/Ridge";
 import ProductCard from "../components/ProductCard";
 import { getDb, ensureSchema } from "../lib/db";
+import { CATEGORIES } from "../lib/categories";
 
 export const dynamic = "force-dynamic";
 
@@ -14,8 +15,27 @@ async function getProducts() {
   return result.rows;
 }
 
+// Groups products by category, in the fixed order defined in
+// lib/categories.js, skipping any category with nothing in it.
+function groupByCategory(products) {
+  const groups = {};
+  for (const product of products) {
+    const cat = product.category || "Other";
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(product);
+  }
+
+  const orderedNames = [
+    ...CATEGORIES.filter((c) => groups[c]),
+    ...Object.keys(groups).filter((c) => !CATEGORIES.includes(c)),
+  ];
+
+  return orderedNames.map((name) => ({ name, items: groups[name] }));
+}
+
 export default async function HomePage() {
   const products = await getProducts();
+  const sections = groupByCategory(products);
 
   return (
     <>
@@ -47,11 +67,16 @@ export default async function HomePage() {
               Nothing&rsquo;s in the oven yet — check back soon.
             </div>
           ) : (
-            <div className="grid">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+            sections.map((section) => (
+              <div className="category-section" key={section.name}>
+                <h3 className="category-heading">{section.name}</h3>
+                <div className="grid">
+                  {section.items.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+              </div>
+            ))
           )}
         </div>
       </main>
