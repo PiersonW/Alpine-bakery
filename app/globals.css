@@ -193,6 +193,25 @@ button {
   gap: 28px;
 }
 
+.category-section {
+  margin-bottom: 48px;
+}
+
+.category-section:last-child {
+  margin-bottom: 0;
+}
+
+.category-heading {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--rye);
+  margin: 0 0 18px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--crust);
+  display: inline-block;
+}
+
 /* Ticket-stub product card: a nod to alpine lift tickets & bakery order tickets */
 .ticket {
   background: #fff;
@@ -498,6 +517,7 @@ button {
 .field input[type="text"],
 .field input[type="number"],
 .field input[type="password"],
+.field select,
 .field textarea {
   width: 100%;
   padding: 10px 12px;
@@ -508,12 +528,17 @@ button {
   background: var(--snowcap);
 }
 
+.field select {
+  cursor: pointer;
+}
+
 .field textarea {
   resize: vertical;
   min-height: 70px;
 }
 
 .field input:focus,
+.field select:focus,
 .field textarea:focus {
   border-color: var(--crust-dark);
 }
