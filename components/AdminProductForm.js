@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CATEGORIES } from "../lib/categories";
 
 const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
@@ -26,6 +27,7 @@ export default function AdminProductForm({ initial, onSaved, onCancel }) {
     initial ? (initial.price_cents / 100).toFixed(2) : ""
   );
   const [imageUrl, setImageUrl] = useState(initial?.image_url || "");
+  const [category, setCategory] = useState(initial?.category || CATEGORIES[0]);
   const [available, setAvailable] = useState(
     initial ? Boolean(initial.available) : true
   );
@@ -68,6 +70,7 @@ export default function AdminProductForm({ initial, onSaved, onCancel }) {
       price_cents: Math.round(priceNumber * 100),
       image_url: imageUrl,
       available,
+      category,
     };
 
     const url = initial ? `/api/products/${initial.id}` : "/api/products";
@@ -91,6 +94,7 @@ export default function AdminProductForm({ initial, onSaved, onCancel }) {
       setDescription("");
       setPrice("");
       setImageUrl("");
+      setCategory(CATEGORIES[0]);
       setAvailable(true);
     }
     onSaved?.();
@@ -141,6 +145,21 @@ export default function AdminProductForm({ initial, onSaved, onCancel }) {
           onChange={(e) => setPrice(e.target.value)}
           placeholder="8.00"
         />
+      </div>
+
+      <div className="field">
+        <label htmlFor="category">Category</label>
+        <select
+          id="category"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+        >
+          {CATEGORIES.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="field">
