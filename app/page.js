@@ -5,6 +5,7 @@ import { getDb, ensureSchema } from "../lib/db";
 import { CATEGORIES } from "../lib/categories";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 async function getProducts() {
   await ensureSchema();
