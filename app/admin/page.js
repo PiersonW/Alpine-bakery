@@ -83,7 +83,9 @@ export default function AdminPage() {
                     <div className="name">
                       {p.name} {!p.available ? "(sold out)" : ""}
                     </div>
-                    <div className="price">${(p.price_cents / 100).toFixed(2)}</div>
+                    <div className="price">
+                      ${(p.price_cents / 100).toFixed(2)} · {p.category || "Other"}
+                    </div>
                   </div>
                   <div className="row-actions">
                     <button className="link-btn" onClick={() => setEditingId(p.id)}>
