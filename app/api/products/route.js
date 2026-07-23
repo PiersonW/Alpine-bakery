@@ -14,7 +14,7 @@ export async function GET() {
 export async function POST(request) {
   await ensureSchema();
   const body = await request.json();
-  const { name, description, price_cents, image_url, available } = body;
+  const { name, description, price_cents, image_url, available, category, featured } = body;
 
   if (!name || !price_cents || price_cents <= 0) {
     return NextResponse.json(
@@ -26,8 +26,8 @@ export async function POST(request) {
   const db = getDb();
   const id = randomUUID();
   await db.execute({
-    sql: `INSERT INTO products (id, name, description, price_cents, image_url, available)
-          VALUES (?, ?, ?, ?, ?, ?)`,
+    sql: `INSERT INTO products (id, name, description, price_cents, image_url, available, category, featured)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       id,
       name,
@@ -35,6 +35,8 @@ export async function POST(request) {
       Math.round(price_cents),
       image_url || null,
       available === false ? 0 : 1,
+      category || "Other",
+      featured ? 1 : 0,
     ],
   });
 
