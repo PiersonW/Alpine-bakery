@@ -558,6 +558,12 @@ button {
   overflow: hidden;
 }
 
+.admin-product-list {
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
 .admin-product-row {
   display: flex;
   align-items: center;
