@@ -19,7 +19,8 @@ export default function Navbar() {
           Alpine Bakery
         </Link>
         <div className="nav-links">
-          <Link href="/#shop">Shop</Link>
+          <Link href="/">Home</Link>
+          <Link href="/shop">Full Menu</Link>
           <Link href="/cart" className="cart-pill">
             Cart {totalCount > 0 ? `(${totalCount})` : ""}
           </Link>
