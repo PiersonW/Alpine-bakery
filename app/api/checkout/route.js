@@ -50,7 +50,10 @@ export async function POST(request) {
 
   const productsById = Object.fromEntries(result.rows.map((p) => [p.id, p]));
 
+  const TAX_RATE = 0.07;
   const line_items = [];
+  let subtotalCents = 0;
+
   for (const item of items) {
     const product = productsById[item.id];
     if (!product || !product.available) {
@@ -60,6 +63,7 @@ export async function POST(request) {
       );
     }
     const qty = Math.max(1, Math.min(50, Math.round(item.qty)));
+    subtotalCents += product.price_cents * qty;
     line_items.push({
       quantity: qty,
       price_data: {
@@ -72,6 +76,18 @@ export async function POST(request) {
       },
     });
   }
+
+  const taxCents = Math.round(subtotalCents * TAX_RATE);
+  line_items.push({
+    quantity: 1,
+    price_data: {
+      currency: "usd",
+      unit_amount: taxCents,
+      product_data: {
+        name: "Sales tax (7%)",
+      },
+    },
+  });
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || request.headers.get("origin");
