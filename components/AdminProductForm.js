@@ -31,6 +31,9 @@ export default function AdminProductForm({ initial, onSaved, onCancel }) {
   const [available, setAvailable] = useState(
     initial ? Boolean(initial.available) : true
   );
+  const [featured, setFeatured] = useState(
+    initial ? Boolean(initial.featured) : false
+  );
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -71,6 +74,7 @@ export default function AdminProductForm({ initial, onSaved, onCancel }) {
       image_url: imageUrl,
       available,
       category,
+      featured,
     };
 
     const url = initial ? `/api/products/${initial.id}` : "/api/products";
@@ -96,6 +100,7 @@ export default function AdminProductForm({ initial, onSaved, onCancel }) {
       setImageUrl("");
       setCategory(CATEGORIES[0]);
       setAvailable(true);
+      setFeatured(false);
     }
     onSaved?.();
   }
@@ -170,6 +175,17 @@ export default function AdminProductForm({ initial, onSaved, onCancel }) {
             onChange={(e) => setAvailable(e.target.checked)}
           />
           In stock / available to order
+        </label>
+      </div>
+
+      <div className="field">
+        <label className="availability-toggle">
+          <input
+            type="checkbox"
+            checked={featured}
+            onChange={(e) => setFeatured(e.target.checked)}
+          />
+          Feature on homepage (e.g. this week's pop-up items)
         </label>
       </div>
 
