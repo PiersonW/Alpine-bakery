@@ -761,6 +761,12 @@ button {
   border: 1px solid var(--line);
 }
 
+.blocked-dates-list {
+  max-height: 240px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
 .blocked-date-row {
   display: flex;
   align-items: center;
