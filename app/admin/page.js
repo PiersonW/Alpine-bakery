@@ -30,6 +30,15 @@ export default function AdminPage() {
     loadProducts();
   }
 
+  async function handleToggleFeatured(product) {
+    await fetch(`/api/products/${product.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...product, featured: !product.featured }),
+    });
+    loadProducts();
+  }
+
   async function handleLogout() {
     await fetch("/api/admin-login", { method: "DELETE" });
     router.push("/admin/login");
@@ -82,6 +91,7 @@ export default function AdminPage() {
                   <img src={p.image_url || undefined} alt="" />
                   <div>
                     <div className="name">
+                      {p.featured ? "★ " : ""}
                       {p.name} {!p.available ? "(sold out)" : ""}
                     </div>
                     <div className="price">
@@ -89,6 +99,9 @@ export default function AdminPage() {
                     </div>
                   </div>
                   <div className="row-actions">
+                    <button className="link-btn" onClick={() => handleToggleFeatured(p)}>
+                      {p.featured ? "Unfeature" : "Feature"}
+                    </button>
                     <button className="link-btn" onClick={() => setEditingId(p.id)}>
                       Edit
                     </button>
