@@ -4,12 +4,12 @@ import { getDb, ensureSchema } from "../../../../lib/db";
 export async function PUT(request, { params }) {
   await ensureSchema();
   const body = await request.json();
-  const { name, description, price_cents, image_url, available, category } = body;
+  const { name, description, price_cents, image_url, available, category, featured } = body;
 
   const db = getDb();
   await db.execute({
     sql: `UPDATE products
-          SET name = ?, description = ?, price_cents = ?, image_url = ?, available = ?, category = ?
+          SET name = ?, description = ?, price_cents = ?, image_url = ?, available = ?, category = ?, featured = ?
           WHERE id = ?`,
     args: [
       name,
@@ -18,6 +18,7 @@ export async function PUT(request, { params }) {
       image_url || null,
       available ? 1 : 0,
       category || "Other",
+      featured ? 1 : 0,
       params.id,
     ],
   });
