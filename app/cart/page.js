@@ -113,6 +113,7 @@ export default function CartPage() {
                 selected={pickupDate}
                 onSelect={setPickupDate}
                 disabledDates={blockedDates}
+                blockedDates={blockedDates}
                 monthsAhead={3}
               />
               {pickupDate ? (
