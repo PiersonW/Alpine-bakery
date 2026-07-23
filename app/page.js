@@ -1,14 +1,13 @@
 import Navbar from "../components/Navbar";
 import Ridge from "../components/Ridge";
 import ProductCard from "../components/ProductCard";
-import { getFeaturedProducts, groupByCategory } from "../lib/products";
+import { getFeaturedProducts } from "../lib/products";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function HomePage() {
   const products = await getFeaturedProducts();
-  const sections = groupByCategory(products);
 
   return (
     <>
@@ -42,16 +41,11 @@ export default async function HomePage() {
               <a href="/shop">browse the full menu</a>.
             </div>
           ) : (
-            sections.map((section) => (
-              <div className="category-section" key={section.name}>
-                <h3 className="category-heading">{section.name}</h3>
-                <div className="grid">
-                  {section.items.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </div>
-              </div>
-            ))
+            <div className="grid">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
           )}
         </div>
       </main>
