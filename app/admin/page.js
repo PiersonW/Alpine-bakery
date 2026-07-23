@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminProductForm from "../../components/AdminProductForm";
 import AdminBlockedDates from "../../components/AdminBlockedDates";
+import AdminBulkImport from "../../components/AdminBulkImport";
 
 export default function AdminPage() {
   const [products, setProducts] = useState([]);
@@ -102,6 +103,10 @@ export default function AdminPage() {
               ))
             )}
           </div>
+        </div>
+
+        <div className="container" style={{ marginTop: "40px" }}>
+          <AdminBulkImport onImported={loadProducts} />
         </div>
 
         <div className="container" style={{ marginTop: "40px" }}>
