@@ -102,7 +102,8 @@ export default function DatePicker({ selected, selectedDates, onSelect, disabled
         })}
       </div>
       <p className="datepicker-legend">
-        <span className="legend-dot legend-blocked" /> Unavailable
+        <span className="legend-dot legend-available" /> Available
+        <span className="legend-dot legend-blocked" style={{ marginLeft: "12px" }} /> Unavailable
       </p>
     </div>
   );
