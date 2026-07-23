@@ -26,7 +26,7 @@ function startOfToday() {
  * `disabledDates` (a Set of "YYYY-MM-DD" strings) can't be picked.
  * `monthsAhead` caps how far into the future someone can browse/pick.
  */
-export default function DatePicker({ selected, onSelect, disabledDates, blockedDates, monthsAhead = 3 }) {
+export default function DatePicker({ selected, selectedDates, onSelect, disabledDates, blockedDates, monthsAhead = 3 }) {
   const today = startOfToday();
   const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
 
@@ -80,7 +80,7 @@ export default function DatePicker({ selected, onSelect, disabledDates, blockedD
           const isFlaggedBlocked = blockedDates?.has(key);
           const isHardDisabled = disabledDates?.has(key);
           const isDisabled = isPast || isHardDisabled;
-          const isSelected = selected === key;
+          const isSelected = selected === key || Boolean(selectedDates?.has(key));
 
           return (
             <button
