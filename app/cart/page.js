@@ -123,17 +123,27 @@ export default function CartPage() {
               ) : null}
             </div>
 
-            <div className="cart-summary">
-              <span className="cart-total">
-                Total: ${(totalCents / 100).toFixed(2)}
-              </span>
-              <button
-                className="btn btn-primary"
-                onClick={handleCheckout}
-                disabled={loading}
-              >
-                {loading ? "Redirecting to Stripe…" : "Checkout with Stripe"}
-              </button>
+            <div className="cart-summary" style={{ flexDirection: "column", alignItems: "stretch", gap: "6px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.95rem", color: "rgba(38,55,42,0.75)" }}>
+                <span>Subtotal</span>
+                <span>${(totalCents / 100).toFixed(2)}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.95rem", color: "rgba(38,55,42,0.75)" }}>
+                <span>Sales tax (7%)</span>
+                <span>${((totalCents * 0.07) / 100).toFixed(2)}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "6px" }}>
+                <span className="cart-total">
+                  Total: ${((totalCents * 1.07) / 100).toFixed(2)}
+                </span>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleCheckout}
+                  disabled={loading}
+                >
+                  {loading ? "Redirecting to Stripe…" : "Checkout with Stripe"}
+                </button>
+              </div>
             </div>
             {error ? <p className="error-text">{error}</p> : null}
           </>
