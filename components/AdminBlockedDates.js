@@ -14,7 +14,7 @@ function formatPretty(dateKey) {
 
 export default function AdminBlockedDates() {
   const [blocked, setBlocked] = useState([]);
-  const [pending, setPending] = useState(null);
+  const [pending, setPending] = useState(new Set());
   const [saving, setSaving] = useState(false);
 
   async function load() {
@@ -29,15 +29,31 @@ export default function AdminBlockedDates() {
 
   const blockedSet = new Set(blocked.map((b) => b.date));
 
-  async function handleBlock() {
-    if (!pending) return;
+  function toggleDate(date) {
+    if (blockedSet.has(date)) {
+      handleUnblock(date);
+      return;
+    }
+    setPending((prev) => {
+      const next = new Set(prev);
+      if (next.has(date)) {
+        next.delete(date);
+      } else {
+        next.add(date);
+      }
+      return next;
+    });
+  }
+
+  async function handleBlockSelected() {
+    if (pending.size === 0) return;
     setSaving(true);
-    await fetch("/api/blocked-dates", {
+    await fetch("/api/blocked-dates/bulk", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date: pending }),
+      body: JSON.stringify({ dates: Array.from(pending) }),
     });
-    setPending(null);
+    setPending(new Set());
     setSaving(false);
     load();
   }
@@ -51,46 +67,49 @@ export default function AdminBlockedDates() {
     <div className="card">
       <h2>Pickup availability</h2>
       <p style={{ fontSize: "0.9rem", color: "rgba(38,55,42,0.7)", marginTop: "-10px" }}>
-        Block dates you can&rsquo;t hand off orders. Blocked dates won&rsquo;t
-        be pickable at checkout.
+        Click a date to select it, click more to select several at once, then
+        block them all together. Blocked dates won't be pickable at checkout.
+        Click an already-blocked (struck-through) date to make it available
+        again.
       </p>
 
       <DatePicker
-        selected={pending}
-        onSelect={(d) => (blockedSet.has(d) ? handleUnblock(d) : setPending(d))}
+        selectedDates={pending}
+        onSelect={toggleDate}
         blockedDates={blockedSet}
         monthsAhead={4}
       />
 
-      {pending ? (
+      {pending.size > 0 ? (
         <button
           className="btn btn-primary"
           style={{ marginTop: "12px" }}
-          onClick={handleBlock}
+          onClick={handleBlockSelected}
           disabled={saving}
         >
-          {saving ? "Blocking…" : `Block ${formatPretty(pending)}`}
+          {saving
+            ? "Blocking…"
+            : `Block ${pending.size} selected date${pending.size === 1 ? "" : "s"}`}
         </button>
-      ) : (
-        <p style={{ fontSize: "0.8rem", color: "rgba(38,55,42,0.5)", marginTop: "10px" }}>
-          Pick a date above to block it. Dates already blocked show
-          struck-through — click one to make it available again.
-        </p>
-      )}
+      ) : null}
 
       <div style={{ marginTop: "20px" }}>
-        <h3 style={{ fontSize: "0.9rem", margin: "0 0 6px" }}>Blocked dates</h3>
+        <h3 style={{ fontSize: "0.9rem", margin: "0 0 6px" }}>
+          Blocked dates ({blocked.length})
+        </h3>
         {blocked.length === 0 ? (
           <p style={{ fontSize: "0.85rem", color: "rgba(38,55,42,0.5)" }}>None yet.</p>
         ) : (
-          blocked.map((b) => (
-            <div className="blocked-date-row" key={b.date}>
-              <span>{formatPretty(b.date)}</span>
-              <button className="link-btn" onClick={() => handleUnblock(b.date)}>
-                Unblock
-              </button>
-            </div>
-          ))
+          <div className="blocked-dates-list">
+            {blocked.map((b) => (
+              <div className="blocked-date-row" key={b.date}>
+                <span>{formatPretty(b.date)}</span>
+                <button className="link-btn" onClick={() => handleUnblock(b.date)}>
+                  Unblock
+                </button>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>
