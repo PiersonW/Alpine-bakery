@@ -86,34 +86,36 @@ export default function AdminPage() {
             ) : products.length === 0 ? (
               <p>No products yet — add your first one on the left.</p>
             ) : (
-              products.map((p) => (
-                <div className="admin-product-row" key={p.id}>
-                  <img src={p.image_url || undefined} alt="" />
-                  <div>
-                    <div className="name">
-                      {p.featured ? "★ " : ""}
-                      {p.name} {!p.available ? "(sold out)" : ""}
+              <div className="admin-product-list">
+                {products.map((p) => (
+                  <div className="admin-product-row" key={p.id}>
+                    <img src={p.image_url || undefined} alt="" />
+                    <div>
+                      <div className="name">
+                        {p.featured ? "★ " : ""}
+                        {p.name} {!p.available ? "(sold out)" : ""}
+                      </div>
+                      <div className="price">
+                        ${(p.price_cents / 100).toFixed(2)} · {p.category || "Other"}
+                      </div>
                     </div>
-                    <div className="price">
-                      ${(p.price_cents / 100).toFixed(2)} · {p.category || "Other"}
+                    <div className="row-actions">
+                      <button className="link-btn" onClick={() => handleToggleFeatured(p)}>
+                        {p.featured ? "Unfeature" : "Feature"}
+                      </button>
+                      <button className="link-btn" onClick={() => setEditingId(p.id)}>
+                        Edit
+                      </button>
+                      <button
+                        className="link-btn"
+                        onClick={() => handleDelete(p.id, p.name)}
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
-                  <div className="row-actions">
-                    <button className="link-btn" onClick={() => handleToggleFeatured(p)}>
-                      {p.featured ? "Unfeature" : "Feature"}
-                    </button>
-                    <button className="link-btn" onClick={() => setEditingId(p.id)}>
-                      Edit
-                    </button>
-                    <button
-                      className="link-btn"
-                      onClick={() => handleDelete(p.id, p.name)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))
+                ))}
+              </div>
             )}
           </div>
         </div>
