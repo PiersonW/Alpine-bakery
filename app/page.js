@@ -11,7 +11,7 @@ async function getProducts() {
   await ensureSchema();
   const db = getDb();
   const result = await db.execute(
-    "SELECT * FROM products ORDER BY created_at DESC"
+    "SELECT * FROM products WHERE featured = 1 ORDER BY created_at DESC"
   );
   return result.rows;
 }
@@ -56,7 +56,7 @@ export default async function HomePage() {
 
       <main className="shop" id="shop">
         <div className="container">
-          <h2>This week&rsquo;s bakes</h2>
+          <h2>This week&rsquo;s featured bakes</h2>
           <p className="shop-sub">
             {products.length > 0
               ? "Order ahead — quantities are limited."
@@ -65,7 +65,7 @@ export default async function HomePage() {
 
           {products.length === 0 ? (
             <div className="empty-state">
-              Nothing&rsquo;s in the oven yet — check back soon.
+              Nothing&rsquo;s featured right now — check back soon.
             </div>
           ) : (
             sections.map((section) => (
