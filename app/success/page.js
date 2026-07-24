@@ -4,6 +4,7 @@ import { Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Navbar from "../../components/Navbar";
 import { useCart } from "../../components/CartContext";
+import { formatPickupTime } from "../../lib/pickupTimes";
 
 function formatPretty(dateKey) {
   const [y, m, d] = dateKey.split("-").map(Number);
@@ -18,6 +19,7 @@ function SuccessContent() {
   const { clearCart } = useCart();
   const searchParams = useSearchParams();
   const pickupDate = searchParams.get("pickup_date");
+  const pickupTime = searchParams.get("pickup_time");
 
   useEffect(() => {
     clearCart();
@@ -33,7 +35,11 @@ function SuccessContent() {
         {pickupDate ? (
           <>
             We&rsquo;ll have it ready for pickup on{" "}
-            <strong>{formatPretty(pickupDate)}</strong>.
+            <strong>
+              {formatPretty(pickupDate)}
+              {pickupTime ? ` at ${formatPickupTime(pickupTime)}` : ""}
+            </strong>
+            .
           </>
         ) : (
           "We'll reach out with pickup details."
