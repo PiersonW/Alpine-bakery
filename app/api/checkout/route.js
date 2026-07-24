@@ -4,7 +4,7 @@ import { getDb, ensureSchema } from "../../../lib/db";
 
 export async function POST(request) {
   await ensureSchema();
-  const { items, pickup_date } = await request.json();
+  const { items, pickup_date, pickup_time } = await request.json();
 
   if (!items || items.length === 0) {
     return NextResponse.json({ error: "Your cart is empty." }, { status: 400 });
@@ -13,6 +13,13 @@ export async function POST(request) {
   if (!pickup_date || !/^\d{4}-\d{2}-\d{2}$/.test(pickup_date)) {
     return NextResponse.json(
       { error: "Please choose a pickup date." },
+      { status: 400 }
+    );
+  }
+
+  if (!pickup_time || !/^\d{2}:\d{2}$/.test(pickup_time)) {
+    return NextResponse.json(
+      { error: "Please choose a pickup time." },
       { status: 400 }
     );
   }
@@ -95,15 +102,15 @@ export async function POST(request) {
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     line_items,
-    success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}&pickup_date=${pickup_date}`,
+    success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}&pickup_date=${pickup_date}&pickup_time=${pickup_time}`,
     cancel_url: `${baseUrl}/cart`,
     // Home-baked goods usually mean local pickup rather than shipping.
     // Switch this on (and add shipping_options) if you ever want to mail orders.
     phone_number_collection: { enabled: true },
-    metadata: { pickup_date },
+    metadata: { pickup_date, pickup_time },
     payment_intent_data: {
-      metadata: { pickup_date },
-      description: `Pickup date: ${pickup_date}`,
+      metadata: { pickup_date, pickup_time },
+      description: `Pickup: ${pickup_date} at ${pickup_time}`,
     },
   });
 
