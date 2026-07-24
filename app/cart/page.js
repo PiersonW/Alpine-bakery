@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Navbar from "../../components/Navbar";
 import DatePicker from "../../components/DatePicker";
 import { useCart } from "../../components/CartContext";
+import { PICKUP_TIMES } from "../../lib/pickupTimes";
 
 function formatPretty(dateKey) {
   const [y, m, d] = dateKey.split("-").map(Number);
@@ -20,6 +21,7 @@ export default function CartPage() {
   const [error, setError] = useState("");
   const [blockedDates, setBlockedDates] = useState(new Set());
   const [pickupDate, setPickupDate] = useState(null);
+  const [pickupTime, setPickupTime] = useState("");
 
   useEffect(() => {
     fetch("/api/blocked-dates")
@@ -33,13 +35,17 @@ export default function CartPage() {
       setError("Pick a pickup date before checking out.");
       return;
     }
+    if (!pickupTime) {
+      setError("Pick a pickup time before checking out.");
+      return;
+    }
     setLoading(true);
     setError("");
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items, pickup_date: pickupDate }),
+        body: JSON.stringify({ items, pickup_date: pickupDate, pickup_time: pickupTime }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -104,10 +110,10 @@ export default function CartPage() {
             ))}
 
             <div className="card" style={{ marginTop: "24px" }}>
-              <h2>Pickup date</h2>
+              <h2>Pickup date &amp; time</h2>
               <p style={{ fontSize: "0.9rem", color: "rgba(38,55,42,0.7)", marginTop: "-10px" }}>
-                Everything is baked to order, so pick the day you&rsquo;d
-                like to swing by and grab it.
+                Everything is baked to order, so pick the day and time
+                you&rsquo;d like to swing by and grab it.
               </p>
               <DatePicker
                 selected={pickupDate}
@@ -116,9 +122,30 @@ export default function CartPage() {
                 blockedDates={blockedDates}
                 monthsAhead={3}
               />
-              {pickupDate ? (
+
+              <div className="field" style={{ marginTop: "16px", maxWidth: "220px" }}>
+                <label htmlFor="pickup-time">Pickup time</label>
+                <select
+                  id="pickup-time"
+                  value={pickupTime}
+                  onChange={(e) => setPickupTime(e.target.value)}
+                >
+                  <option value="">Choose a time…</option>
+                  {PICKUP_TIMES.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {pickupDate && pickupTime ? (
                 <p className="pickup-summary">
-                  Picking up on <strong>{formatPretty(pickupDate)}</strong>
+                  Picking up{" "}
+                  <strong>
+                    {formatPretty(pickupDate)} at{" "}
+                    {PICKUP_TIMES.find((t) => t.value === pickupTime)?.label}
+                  </strong>
                 </p>
               ) : null}
             </div>
