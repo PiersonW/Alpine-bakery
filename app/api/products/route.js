@@ -14,7 +14,7 @@ export async function GET() {
 export async function POST(request) {
   await ensureSchema();
   const body = await request.json();
-  const { name, description, price_cents, image_url, available, category, featured } = body;
+  const { name, description, price_cents, image_urls, available, category, featured, hidden } = body;
 
   if (!name || !price_cents || price_cents <= 0) {
     return NextResponse.json(
@@ -23,20 +23,24 @@ export async function POST(request) {
     );
   }
 
+  const images = Array.isArray(image_urls) ? image_urls.filter(Boolean) : [];
+
   const db = getDb();
   const id = randomUUID();
   await db.execute({
-    sql: `INSERT INTO products (id, name, description, price_cents, image_url, available, category, featured)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    sql: `INSERT INTO products (id, name, description, price_cents, image_url, image_urls, available, category, featured, hidden)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       id,
       name,
       description || "",
       Math.round(price_cents),
-      image_url || null,
+      images[0] || null,
+      JSON.stringify(images),
       available === false ? 0 : 1,
       category || "Other",
       featured ? 1 : 0,
+      hidden ? 1 : 0,
     ],
   });
 
