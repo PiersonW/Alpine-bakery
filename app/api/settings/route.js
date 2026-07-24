@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { getSettings, updateSettings } from "../../../lib/settings";
 
+// Never cache this route -- caching an API endpoint (especially one with
+// a PUT handler) can cause stale error responses to keep being served
+// even after the underlying code is fixed.
+export const dynamic = "force-dynamic";
+
 // Anyone can read the current pickup window (the cart page needs it to
 // build the time dropdown); only an authenticated admin can change it --
 // see middleware.js, which requires auth for every method except GET here.
