@@ -34,12 +34,15 @@ export async function POST(request) {
 
       await sendOwnerOrderEmail({
         pickupDate: session.metadata?.pickup_date || "not specified",
+        pickupTime: session.metadata?.pickup_time || null,
         customerEmail: session.customer_details?.email,
         customerPhone: session.customer_details?.phone,
         lineItems: lineItemsResult.data,
         totalCents: session.amount_total,
       });
     } catch (err) {
+      // Log but don't fail the webhook -- Stripe retries failed webhooks,
+      // and the customer's payment already succeeded regardless.
       console.error("Failed to send owner order email:", err);
     }
   }
