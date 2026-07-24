@@ -5,6 +5,7 @@ import { CATEGORIES } from "../lib/categories";
 
 const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+const MAX_PHOTOS = 5;
 
 async function uploadImage(file) {
   const form = new FormData();
@@ -20,13 +21,24 @@ async function uploadImage(file) {
   return data.secure_url;
 }
 
+function initialImages(initial) {
+  if (!initial) return [];
+  try {
+    const parsed = initial.image_urls ? JSON.parse(initial.image_urls) : [];
+    if (parsed.length > 0) return parsed;
+  } catch (e) {
+    // fall through to legacy single image
+  }
+  return initial.image_url ? [initial.image_url] : [];
+}
+
 export default function AdminProductForm({ initial, onSaved, onCancel }) {
   const [name, setName] = useState(initial?.name || "");
   const [description, setDescription] = useState(initial?.description || "");
   const [price, setPrice] = useState(
     initial ? (initial.price_cents / 100).toFixed(2) : ""
   );
-  const [imageUrl, setImageUrl] = useState(initial?.image_url || "");
+  const [images, setImages] = useState(initialImages(initial));
   const [category, setCategory] = useState(initial?.category || CATEGORIES[0]);
   const [available, setAvailable] = useState(
     initial ? Boolean(initial.available) : true
@@ -34,23 +46,34 @@ export default function AdminProductForm({ initial, onSaved, onCancel }) {
   const [featured, setFeatured] = useState(
     initial ? Boolean(initial.featured) : false
   );
+  const [hidden, setHidden] = useState(
+    initial ? Boolean(initial.hidden) : false
+  );
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   async function handleFileChange(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    const room = MAX_PHOTOS - images.length;
+    const toUpload = files.slice(0, room);
+    if (files.length > room) {
+      setError(`Only ${MAX_PHOTOS} photos allowed per product -- added the first ${room}.`);
+    }
     setUploading(true);
-    setError("");
     try {
-      const url = await uploadImage(file);
-      setImageUrl(url);
+      const uploaded = await Promise.all(toUpload.map(uploadImage));
+      setImages((prev) => [...prev, ...uploaded]);
     } catch (err) {
-      setError("Couldn't upload that photo. Try a different image.");
+      setError("Couldn't upload one of those photos. Try again.");
     } finally {
       setUploading(false);
     }
+  }
+
+  function removeImage(index) {
+    setImages((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function handleSubmit(e) {
@@ -71,10 +94,11 @@ export default function AdminProductForm({ initial, onSaved, onCancel }) {
       name: name.trim(),
       description: description.trim(),
       price_cents: Math.round(priceNumber * 100),
-      image_url: imageUrl,
+      image_urls: images,
       available,
       category,
       featured,
+      hidden,
     };
 
     const url = initial ? `/api/products/${initial.id}` : "/api/products";
@@ -97,10 +121,11 @@ export default function AdminProductForm({ initial, onSaved, onCancel }) {
       setName("");
       setDescription("");
       setPrice("");
-      setImageUrl("");
+      setImages([]);
       setCategory(CATEGORIES[0]);
       setAvailable(true);
       setFeatured(false);
+      setHidden(false);
     }
     onSaved?.();
   }
@@ -108,14 +133,42 @@ export default function AdminProductForm({ initial, onSaved, onCancel }) {
   return (
     <form onSubmit={handleSubmit}>
       <div className="field">
-        <label>Photo</label>
-        <div
-          className="image-preview"
-          style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : undefined}
-        >
-          {!imageUrl ? (uploading ? "Uploading…" : "No photo yet") : null}
-        </div>
-        <input type="file" accept="image/*" onChange={handleFileChange} />
+        <label>Photos ({images.length}/{MAX_PHOTOS})</label>
+        {images.length > 0 ? (
+          <div className="photo-thumb-grid">
+            {images.map((url, i) => (
+              <div className="photo-thumb" key={url + i}>
+                <div
+                  className="photo-thumb-img"
+                  style={{ backgroundImage: `url(${url})` }}
+                />
+                {i === 0 ? <span className="photo-thumb-primary">Main</span> : null}
+                <button
+                  type="button"
+                  className="photo-thumb-remove"
+                  onClick={() => removeImage(i)}
+                  aria-label="Remove photo"
+                >
+                  &times;
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="image-preview">
+            {uploading ? "Uploading…" : "No photos yet"}
+          </div>
+        )}
+        {images.length < MAX_PHOTOS ? (
+          <input type="file" accept="image/*" multiple onChange={handleFileChange} disabled={uploading} />
+        ) : (
+          <p style={{ fontSize: "0.8rem", color: "rgba(38,55,42,0.5)" }}>
+            Remove a photo to add another.
+          </p>
+        )}
+        <p style={{ fontSize: "0.75rem", color: "rgba(38,55,42,0.5)", marginTop: "4px" }}>
+          The first photo is the main one customers see; the rest show as a gallery.
+        </p>
       </div>
 
       <div className="field">
@@ -186,6 +239,17 @@ export default function AdminProductForm({ initial, onSaved, onCancel }) {
             onChange={(e) => setFeatured(e.target.checked)}
           />
           Feature on homepage (e.g. this week's pop-up items)
+        </label>
+      </div>
+
+      <div className="field">
+        <label className="availability-toggle">
+          <input
+            type="checkbox"
+            checked={hidden}
+            onChange={(e) => setHidden(e.target.checked)}
+          />
+          Hide from menu entirely (e.g. out of season)
         </label>
       </div>
 
