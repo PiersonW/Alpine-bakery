@@ -48,6 +48,17 @@ export async function POST(request) {
       { status: 400 }
     );
   }
+
+  // Re-check the pickup time against the owner's current window -- it
+  // could have changed since the customer's page loaded.
+  const settingsResult = await db.execute("SELECT * FROM settings WHERE id = 1");
+  const settings = settingsResult.rows[0];
+  if (settings && (pickup_time < settings.pickup_start || pickup_time > settings.pickup_end)) {
+    return NextResponse.json(
+      { error: "That pickup time is outside our current hours. Please pick another." },
+      { status: 400 }
+    );
+  }
   const ids = items.map((i) => i.id);
   const placeholders = ids.map(() => "?").join(",");
   const result = await db.execute({
