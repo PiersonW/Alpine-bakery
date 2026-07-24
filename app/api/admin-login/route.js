@@ -1,43 +1,27 @@
 import { NextResponse } from "next/server";
-import { randomUUID } from "crypto";
-import { getDb, ensureSchema } from "../../../lib/db";
-
-export async function GET() {
-  await ensureSchema();
-  const db = getDb();
-  const result = await db.execute(
-    "SELECT * FROM products ORDER BY created_at DESC"
-  );
-  return NextResponse.json(result.rows);
-}
+import { makeSessionToken, ADMIN_COOKIE_NAME } from "../../../lib/auth";
 
 export async function POST(request) {
-  await ensureSchema();
-  const body = await request.json();
-  const { name, description, price_cents, image_url, available, category } = body;
+  const { password } = await request.json();
+  const expected = (process.env.ADMIN_PASSWORD || "").trim();
 
-  if (!name || !price_cents || price_cents <= 0) {
-    return NextResponse.json(
-      { error: "Name and a price greater than $0 are required." },
-      { status: 400 }
-    );
+  if (!password || password.trim() !== expected) {
+    return NextResponse.json({ error: "Incorrect password." }, { status: 401 });
   }
 
-  const db = getDb();
-  const id = randomUUID();
-  await db.execute({
-    sql: `INSERT INTO products (id, name, description, price_cents, image_url, available, category)
-          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    args: [
-      id,
-      name,
-      description || "",
-      Math.round(price_cents),
-      image_url || null,
-      available === false ? 0 : 1,
-      category || "Other",
-    ],
+  const response = NextResponse.json({ ok: true });
+  response.cookies.set(ADMIN_COOKIE_NAME, await makeSessionToken(), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24, // 1 day; re-login after that
   });
+  return response;
+}
 
-  return NextResponse.json({ id });
+export async function DELETE() {
+  const response = NextResponse.json({ ok: true });
+  response.cookies.set(ADMIN_COOKIE_NAME, "", { path: "/", maxAge: 0 });
+  return response;
 }
