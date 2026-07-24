@@ -39,6 +39,15 @@ export default function AdminPage() {
     loadProducts();
   }
 
+  async function handleToggleHidden(product) {
+    await fetch(`/api/products/${product.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...product, hidden: !product.hidden }),
+    });
+    loadProducts();
+  }
+
   async function handleLogout() {
     await fetch("/api/admin-login", { method: "DELETE" });
     router.push("/admin/login");
@@ -89,18 +98,21 @@ export default function AdminPage() {
               ) : (
                 <div className="admin-product-list">
                   {products.map((p) => (
-                    <div className="admin-product-row" key={p.id}>
+                    <div className="admin-product-row" key={p.id} style={p.hidden ? { opacity: 0.5 } : undefined}>
                       <img src={p.image_url || undefined} alt="" />
                       <div>
                         <div className="name">
                           {p.featured ? "★ " : ""}
-                          {p.name} {!p.available ? "(sold out)" : ""}
+                          {p.name} {!p.available ? "(sold out)" : ""} {p.hidden ? "(hidden)" : ""}
                         </div>
                         <div className="price">
                           ${(p.price_cents / 100).toFixed(2)} · {p.category || "Other"}
                         </div>
                       </div>
                       <div className="row-actions">
+                        <button className="link-btn" onClick={() => handleToggleHidden(p)}>
+                          {p.hidden ? "Unhide" : "Hide"}
+                        </button>
                         <button className="link-btn" onClick={() => handleToggleFeatured(p)}>
                           {p.featured ? "Unfeature" : "Feature"}
                         </button>
