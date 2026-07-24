@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import AdminProductForm from "../../components/AdminProductForm";
 import AdminBlockedDates from "../../components/AdminBlockedDates";
 import AdminBulkImport from "../../components/AdminBulkImport";
+import AdminPickupSettings from "../../components/AdminPickupSettings";
 
 export default function AdminPage() {
   const [products, setProducts] = useState([]);
@@ -136,6 +137,10 @@ export default function AdminPage() {
               <AdminBulkImport onImported={loadProducts} />
             </div>
           </div>
+        </div>
+
+        <div className="container" style={{ marginTop: "40px" }}>
+          <AdminPickupSettings />
         </div>
 
         <div className="container" style={{ marginTop: "40px" }}>
