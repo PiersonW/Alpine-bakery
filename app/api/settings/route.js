@@ -11,7 +11,9 @@ export const dynamic = "force-dynamic";
 // see middleware.js, which requires auth for every method except GET here.
 export async function GET() {
   const settings = await getSettings();
-  return NextResponse.json(settings);
+  return NextResponse.json(settings, {
+    headers: { "Cache-Control": "no-store, must-revalidate" },
+  });
 }
 
 export async function PUT(request) {
