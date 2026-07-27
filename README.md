@@ -1,115 +1,133 @@
-# Alpine Bakery website
+Visual Studio Code 1.130
 
-Your own storefront: browse products, add to cart, check out with Stripe,
-and a private `/admin` page to add/edit products with a photo and price.
-You own all of this code outright. The only recurring cost is your
-domain (which you already have) — hosting, the database, and image
-storage all run on free tiers.
+Show release notes after an update
 
-## What's included
-- `/` — the public shop
-- `/cart` — cart + a pickup-date picker + checkout (hands off to Stripe's
-  secure payment page)
-- `/admin` — password-protected page to add, edit, delete products, and
-  block off dates you're not available for pickup
-- Orders themselves live in your Stripe Dashboard (Payments tab) — that's
-  where you'll see what sold, the requested pickup date (shown on each
-  payment), and get paid out. This site doesn't keep a separate order
-  history, which keeps things simple for a small bakery.
+Follow us on LinkedIn, X, Bluesky | View online
 
-## Blocking pickup dates
-On `/admin`, under "Pickup availability," click any date on the calendar
-to block it — customers won't be able to select it at checkout. Click a
-blocked (struck-through) date again to make it available. This is
-checked twice: once in the browser so customers never see a blocked
-date as pickable, and again on the server at the moment of checkout, in
-case you block a date after they've loaded the page.
+Release date: July 22, 2026
 
-## One-time setup (about 30–45 minutes)
+Welcome to the 1.130 release of Visual Studio Code. This release brings agent host improvements, faster review workflows in the Agents window, better chat visibility, and smarter terminal link handling.
 
-### 1. Install Node.js
-If you don't have it: download the LTS version from https://nodejs.org
+The agent host: Run sessions in a dedicated process that you can connect to from multiple VS Code windows.
 
-### 2. Create your free accounts
-You'll need four free accounts. None require a paid plan for a small
-bakery's traffic:
+Agents window improvements (Preview): Review multi-file changes faster with compact diffs, file-level stats, and worktree support across harnesses.
 
-1. **Turso** (database) — https://turso.tech → sign up → "Create Database"
-   (pick any region close to you) → open the database → copy the
-   **Database URL** and create/copy an **Auth Token**.
-2. **Cloudinary** (photo storage) — https://cloudinary.com → sign up →
-   your **Cloud name** is on the dashboard. Then go to
-   Settings → Upload → "Add upload preset" → set **Signing Mode to
-   "Unsigned"** → save → copy the preset name.
-3. **Stripe** (payments) — https://dashboard.stripe.com/register → once
-   in, go to Developers → API keys → copy the **Secret key**. Also
-   complete Stripe's business verification (bank account, etc.) so you
-   can actually get paid out — this normally takes a day or two, so do
-   it early.
-4. **Vercel** (hosting) — https://vercel.com/signup → sign up with
-   GitHub (easiest — see step 4 below for why).
+Assisted tool approvals: Reduce approval interruptions by letting the model evaluate tool-call risk during agent tasks.
 
-### 3. Configure your project
-In this project folder, copy `.env.example` to `.env` and fill in the
-values you just collected:
+Clickable file links in Git diffs with mnemonic prefixes: Open files directly from diff output when mnemonic prefixes are enabled.
 
-```
-cp .env.example .env
-```
+Happy Coding!
 
-Open `.env` and fill in every value. For `ADMIN_PASSWORD`, pick
-something you and your wife will remember but a stranger won't guess.
-For `ADMIN_SESSION_SECRET`, any long random string works — mash your
-keyboard for 40+ characters.
+VS Code is rolling out gradually to all users. Use Check for Updates in VS Code to get the latest version immediately.
 
-### 4. Run it locally to try it out
-```
-npm install
-npm run dev
-```
-Visit http://localhost:3000 for the shop, and http://localhost:3000/admin
-to log in and add your first products.
+To try new features as soon as possible, download the nightly Insiders build, which includes the latest updates as soon as they are available.
 
-(Checkout will work with Stripe's test mode by default if you used a
-`sk_test_...` key. Switch to your `sk_live_...` key when you're ready to
-accept real payments.)
+In this update
+Agents
+Chat
+Terminal
+Engineering
+Thank you
+Agents
+The agent host
+As mentioned in our last release, we're rearchitecting how agent sessions work in VS Code around the agent host - a dedicated process that runs agent harnesses such as Copilot, Claude, and Codex, based on the Agent Host Protocol (AHP). Because a session lives in its own process, the same session can be connected to and rendered from multiple VS Code windows at once. The agent host's Copilot agent is powered by the Copilot SDK, which means that its behavior and functionality is aligned with the Copilot CLI, the standalone GitHub Copilot app, and other Copilot products.
 
-### 5. Put the code on GitHub
-Create a free GitHub account if you don't have one, create a new
-repository, and push this project to it. GitHub Desktop
-(https://desktop.github.com) is the easiest way if you're not
-comfortable with git on the command line.
+Learn more about the VS Code Agent Host architecture.
 
-### 6. Deploy to Vercel
-1. In Vercel, click "Add New… → Project" and import the GitHub repo
-   you just created.
-2. Before deploying, open "Environment Variables" and add every value
-   from your `.env` file (same names, same values). Use your **live**
-   Stripe secret key here, not the test one, once you're ready to sell
-   for real.
-3. Click Deploy. Vercel gives you a `xxx.vercel.app` URL to test with.
+We're actively developing the agent host and progressively rolling it out to users in both the editor window and the Agents window. To opt in, enable   chat.agentHost.enabled and then pick an agent host harness from the harness dropdown. The screenshot below shows how to select the Copilot harness on the agent host in the editor window:
 
-### 7. Point alpinebakery.org at Vercel
-In Vercel: Project → Settings → Domains → add `alpinebakery.org`.
-Vercel will show you one or two DNS records to add. Go to wherever your
-domain is registered (Squarespace Domains, or wherever you manage DNS
-for alpinebakery.org) and add those records. This usually takes effect
-within a few hours.
+Screenshot showing the harness dropdown in the editor window.
 
-## Day-to-day use
-- To add a product: go to `alpinebakery.org/admin`, log in, fill in the
-  photo, name, price, and optional description, click "Add product."
-- To mark something sold out without deleting it: edit the product and
-  uncheck "In stock."
-- Orders and payouts: check https://dashboard.stripe.com
+As we continue to invest in the agent host, some features might only be available when an agent runs on it. Those features link back to this section and, where relevant, note any additional settings that enable them (for example,   chat.agents.claude.preferAgentHost to enable the Claude agent on the agent host).
 
-## If something breaks
-- **Photos won't upload:** double check the Cloudinary cloud name and
-  upload preset in your environment variables, and that the preset's
-  signing mode is set to "Unsigned."
-- **Checkout fails:** check that `STRIPE_SECRET_KEY` is set correctly in
-  Vercel's environment variables, and that `NEXT_PUBLIC_BASE_URL`
-  matches your real domain.
-- **Can't log into /admin:** the password is whatever you set as
-  `ADMIN_PASSWORD` in your environment variables — not your Vercel or
-  Stripe password.
+If you have any feedback or requests while using the agent host, please let us know by filing an issue.
+
+Assisted tool approvals
+Setting:   chat.assistedPermissions.enabled
+
+Repeated tool approval prompts can interrupt long-running agent tasks. With assisted permissions, the language model evaluates the risk of each tool call and decides whether the tool can run or should require your approval.
+
+Enable the setting to add Assisted permissions to the permissions picker for agents that run on the agent host. The following video compares default approvals with assisted permissions:
+
+
+Agents window improvements (Preview)
+The Agents window includes several updates that make it easier to review changes and manage chats. Updates that require a session running on the agent host are called out below.
+
+File-level diff statistics
+Each file header in the Changes editor shows live insertion and deletion counts next to the file path. You can quickly assess the size of each file's changes while scanning a multi-file diff.
+
+Compact multi-file diff view
+The multi-file diff uses a more compact gutter that removes empty space before the code. File headers, line numbers, and unchanged-region controls share a consistent alignment, which leaves more room for reviewing changes in a narrow editor.
+
+Screenshot showing file-level diff statistics and compact, aligned gutters in the multi-file diff view.
+
+Compact quick chats
+Quick chats, which run on the agent host, use compact, single-line rows in the sessions list. Regular sessions retain a second line with change statistics, status, and timestamps, making quick chats easier to distinguish and leaving more room for project sessions.
+
+Screenshot showing compact quick-chat rows in the sessions list.
+
+Worktree support for all agent harnesses
+Agent harnesses running on the agent host support worktree isolation. The New Worktree checkbox in the Agents window was previously only supported by the Copilot harness. Claude and Codex sessions also run in a Git worktree, making it easier to spin up parallel sessions for different features in the same workspace regardless of harness.
+
+Screenshot showing the New Worktree option for a Claude agent session.
+
+Chat
+Chat timestamps
+Setting:   chat.verbose
+
+Timestamps are shown for chat requests and responses. Hover over the message toolbar to view the timestamp and elapsed time for a chat interaction. You can disable this with   chat.verbose .
+
+
+Aggregate AI credit usage for Copilot Business and Enterprise
+Copilot Business and Copilot Enterprise users can now see their aggregate AI credit usage for the current billing cycle directly in the Copilot status menu. Previously, credit usage was only surfaced when a user-level budget was configured, leaving many organization-managed users without visibility into how many credits they had consumed.
+
+Now, when no user-level budget is set, the status menu displays the total number of credits used so far in the billing cycle. This gives you an at-a-glance view of your consumption, so you can better understand your usage patterns without leaving the editor.
+
+Screenshot showing the Copilot status menu displaying aggregate credit usage for a Copilot Enterprise user.
+
+Terminal
+Clickable file links in Git diffs with mnemonic prefixes
+You can open file links directly from Git diff output in the terminal when Git's diff.mnemonicPrefix option is enabled. VS Code recognizes prefixes such as i/ for the index and w/ for the working tree, and removes the prefix from the link target so the correct file opens.
+
+When mnemonic prefixes are enabled, VS Code also recognizes the numeric 1/ and 2/ prefixes produced by git diff --no-index.
+
+Engineering
+The VS Code repository is compiled using the release version of TypeScript 7. We also switched to the release version of the TypeScript 7 extension. Read the TypeScript 7.0 release announcement from the TypeScript team.
+
+Thank you
+Contributions to vscode:
+
+@accnops (Arthur Cnops)
+Voice: opt out of backend auto-narration (auto_narrate: false) PR #325799
+voice: send request_narration only after session context is sent PR #325928
+voice: NACK + client revalidation for dropped narration PR #325966
+@ahmadawais (Ahmad Awais): Detect Command Code as an agent CLI for terminal tab titles PR #324417
+@AntonioLujanoLuna (Antonio Lujano Luna): Fix BYOK Anthropic endpoints sending PDFs as image blocks PR #324960
+@arham766 (Shahrier Islam Arham): chore: bump windows-process-tree to 0.8.0 to fix UTF-8 command lines in Process Explorer PR #324283
+@clintharrison (Clint Harrison): Support mnemonic prefixes in git diff parsing for terminal links PR #298490
+@justjavac (迷渡): Decorations: fall back to lower-priority colors PR #325422
+@kobihikri (Kobi Hikri): Remove dead CODEOWNERS rules for deleted no-package-lock / no-yarn-lock workflows PR #325932
+@mirimadahmed (Mir)
+Handle voice barge-in playback PR #325808
+Fix voice barge-in protocol PR #326159
+Voice agent send voice language locale from the client PR #325931
+Voice agent always on streaming mode to support barge in PR #326165
+Add scoped live Voice transcripts PR #326134
+@pony-maggie (Lucas Ma)
+Avoid stale simple dialog folder updates PR #321357
+Allow simple file dialog to create nested folders PR #321355
+@rfeltis (Ralph Feltis): Fix quota trajectory billing period calculation PR #325895
+@smorimoto (Sora Morimoto): Recognise OCaml in settings labels PR #325457
+@spokodev: fix: match uppercase query characters in fuzzyContains PR #324047
+@UditDewan (udit): Fix tunnelProtocol context key always resolving to https on focus PR #325445
+Issue tracking
+Contributions to our issue tracking:
+
+@gjsjohnmurray (John Murray)
+@RedCMD (RedCMD)
+@IllusionMH (Andrii Dieiev)
+@albertosantini (Alberto Santini)
+We really appreciate people trying our new features as soon as they are ready, so check back here often and learn what's new.
+
+If you'd like to read release notes for previous VS Code versions, go to Updates on code.visualstudio.com.
+
