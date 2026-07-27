@@ -64,6 +64,9 @@ export default function AdminPage() {
             Alpine Bakery — Manage products
           </span>
           <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+            <a href="/admin/orders" style={{ color: "var(--snowcap)", fontSize: "0.9rem" }}>
+              Orders
+            </a>
             <a href="/" style={{ color: "var(--snowcap)", fontSize: "0.9rem" }}>
               View site
             </a>
