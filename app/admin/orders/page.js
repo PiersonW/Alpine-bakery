@@ -2,11 +2,137 @@
 
 import { useEffect, useState } from "react";
 
-const STATUS_OPTIONS = ["new", "in progress", "picked up"];
+const STATUS_OPTIONS = ["new", "in progress", "picked up", "cancelled"];
+
+function formatDate(dateStr) {
+  if (!dateStr) return "Not specified";
+  const parts = dateStr.split("-");
+  if (parts.length !== 3) return dateStr;
+  const [y, m, d] = parts;
+  return `${m}/${d}/${y}`;
+}
+
+function formatTime(timeStr) {
+  if (!timeStr) return "";
+  const [hStr, mStr] = timeStr.split(":");
+  let h = parseInt(hStr, 10);
+  if (Number.isNaN(h)) return timeStr;
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12;
+  if (h === 0) h = 12;
+  return `${h}:${mStr} ${ampm}`;
+}
+
+function OrdersCalendar({ orders, selectedDate, onSelectDate }) {
+  const today = new Date();
+  const [viewYear, setViewYear] = useState(today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(today.getMonth()); // 0-indexed
+
+  // Count active (non-cancelled) orders per date
+  const countsByDate = {};
+  orders.forEach((o) => {
+    if (!o.pickup_date || o.status === "cancelled") return;
+    countsByDate[o.pickup_date] = (countsByDate[o.pickup_date] || 0) + 1;
+  });
+
+  const firstOfMonth = new Date(viewYear, viewMonth, 1);
+  const startWeekday = firstOfMonth.getDay(); // 0 = Sunday
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+  const cells = [];
+  for (let i = 0; i < startWeekday; i++) {
+    cells.push(null);
+  }
+  for (let day = 1; day <= daysInMonth; day++) {
+    const mm = String(viewMonth + 1).padStart(2, "0");
+    const dd = String(day).padStart(2, "0");
+    cells.push(`${viewYear}-${mm}-${dd}`);
+  }
+
+  function goPrevMonth() {
+    if (viewMonth === 0) {
+      setViewMonth(11);
+      setViewYear(viewYear - 1);
+    } else {
+      setViewMonth(viewMonth - 1);
+    }
+  }
+
+  function goNextMonth() {
+    if (viewMonth === 11) {
+      setViewMonth(0);
+      setViewYear(viewYear + 1);
+    } else {
+      setViewMonth(viewMonth + 1);
+    }
+  }
+
+  const monthLabel = firstOfMonth.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+
+  return (
+    <div className="card">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+        <button className="link-btn" onClick={goPrevMonth}>← Prev</button>
+        <h2 style={{ margin: 0 }}>{monthLabel}</h2>
+        <button className="link-btn" onClick={goNextMonth}>Next →</button>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(7, 1fr)",
+          gap: "4px",
+          textAlign: "center",
+          fontSize: "0.8rem",
+          marginBottom: "4px",
+          opacity: 0.7,
+        }}
+      >
+        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+          <div key={d}>{d}</div>
+        ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "4px" }}>
+        {cells.map((dateStr, idx) => {
+          if (!dateStr) return <div key={`empty-${idx}`} />;
+          const count = countsByDate[dateStr] || 0;
+          const isSelected = dateStr === selectedDate;
+          const dayNum = parseInt(dateStr.split("-")[2], 10);
+          return (
+            <button
+              key={dateStr}
+              onClick={() => onSelectDate(isSelected ? null : dateStr)}
+              style={{
+                padding: "8px 4px",
+                borderRadius: "6px",
+                border: isSelected ? "2px solid #2d4a3a" : "1px solid #ddd",
+                background: count > 0 ? "#e8f3ea" : "transparent",
+                cursor: "pointer",
+                fontWeight: count > 0 ? 600 : 400,
+              }}
+            >
+              <div>{dayNum}</div>
+              {count > 0 && (
+                <div style={{ fontSize: "0.7rem" }}>
+                  {count} order{count > 1 ? "s" : ""}
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(null);
 
   async function loadOrders() {
     setLoading(true);
@@ -31,10 +157,14 @@ export default function AdminOrdersPage() {
 
   function formatPickup(order) {
     if (!order.pickup_date) return "Not specified";
-    let text = order.pickup_date;
-    if (order.pickup_time) text += ` at ${order.pickup_time}`;
+    let text = formatDate(order.pickup_date);
+    if (order.pickup_time) text += ` at ${formatTime(order.pickup_time)}`;
     return text;
   }
+
+  const visibleOrders = selectedDate
+    ? orders.filter((o) => o.pickup_date === selectedDate)
+    : orders;
 
   return (
     <div className="admin-shell">
@@ -55,16 +185,30 @@ export default function AdminOrdersPage() {
       </header>
 
       <main className="admin-main">
+        <div className="container" style={{ marginBottom: "24px" }}>
+          <OrdersCalendar orders={orders} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+        </div>
+
         <div className="container">
           <div className="card">
-            <h2>Order queue</h2>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h2>
+                Order queue
+                {selectedDate ? ` — ${formatDate(selectedDate)}` : ""}
+              </h2>
+              {selectedDate && (
+                <button className="link-btn" onClick={() => setSelectedDate(null)}>
+                  Show all
+                </button>
+              )}
+            </div>
             {loading ? (
               <p>Loading…</p>
-            ) : orders.length === 0 ? (
-              <p>No orders yet.</p>
+            ) : visibleOrders.length === 0 ? (
+              <p>No orders {selectedDate ? "for this date." : "yet."}</p>
             ) : (
               <div className="admin-product-list">
-                {orders.map((order) => (
+                {visibleOrders.map((order) => (
                   <div
                     className="admin-product-row"
                     key={order.id}
@@ -73,9 +217,20 @@ export default function AdminOrdersPage() {
                     <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
                       <div>
                         <div className="name">Pickup: {formatPickup(order)}</div>
-                        <div className="price">
-                          {order.customer_email || "No email"}
-                          {order.customer_phone ? ` · ${order.customer_phone}` : ""}
+                        <div className="price" style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                          {order.customer_email ? (
+                            <a href={`mailto:${order.customer_email}`}>{order.customer_email}</a>
+                          ) : (
+                            "No email"
+                          )}
+                          {order.customer_phone && (
+                            <>
+                              <span>·</span>
+                              <a href={`tel:${order.customer_phone}`}>Call {order.customer_phone}</a>
+                              <span>·</span>
+                              <a href={`sms:${order.customer_phone}`}>Text</a>
+                            </>
+                          )}
                         </div>
                       </div>
                       <select
