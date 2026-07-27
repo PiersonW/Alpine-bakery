@@ -28,11 +28,17 @@ function OrdersCalendar({ orders, selectedDate, onSelectDate }) {
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth()); // 0-indexed
 
-  // Count active (non-cancelled) orders per date
+  // Count active (non-cancelled) orders per date, and collect what's in them
   const countsByDate = {};
+  const namesByDate = {};
   orders.forEach((o) => {
     if (!o.pickup_date || o.status === "cancelled") return;
     countsByDate[o.pickup_date] = (countsByDate[o.pickup_date] || 0) + 1;
+    if (!namesByDate[o.pickup_date]) namesByDate[o.pickup_date] = new Set();
+    (o.items || []).forEach((item) => {
+      if (!item.description || /tax/i.test(item.description)) return;
+      namesByDate[o.pickup_date].add(item.description);
+    });
   });
 
   const firstOfMonth = new Date(viewYear, viewMonth, 1);
@@ -102,6 +108,9 @@ function OrdersCalendar({ orders, selectedDate, onSelectDate }) {
           const count = countsByDate[dateStr] || 0;
           const isSelected = dateStr === selectedDate;
           const dayNum = parseInt(dateStr.split("-")[2], 10);
+          const names = namesByDate[dateStr] ? Array.from(namesByDate[dateStr]) : [];
+          let summary = names.join(", ");
+          if (summary.length > 28) summary = summary.slice(0, 25) + "…";
           return (
             <button
               key={dateStr}
@@ -113,13 +122,21 @@ function OrdersCalendar({ orders, selectedDate, onSelectDate }) {
                 background: count > 0 ? "#e8f3ea" : "transparent",
                 cursor: "pointer",
                 fontWeight: count > 0 ? 600 : 400,
+                minHeight: "56px",
               }}
             >
               <div>{dayNum}</div>
               {count > 0 && (
-                <div style={{ fontSize: "0.7rem" }}>
-                  {count} order{count > 1 ? "s" : ""}
-                </div>
+                <>
+                  <div style={{ fontSize: "0.65rem" }}>
+                    {count} order{count > 1 ? "s" : ""}
+                  </div>
+                  {summary && (
+                    <div style={{ fontSize: "0.65rem", opacity: 0.8, whiteSpace: "normal", lineHeight: 1.2 }}>
+                      {summary}
+                    </div>
+                  )}
+                </>
               )}
             </button>
           );
@@ -147,12 +164,19 @@ export default function AdminOrdersPage() {
   }, []);
 
   async function handleStatusChange(id, status) {
-    await fetch("/api/orders", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, status }),
-    });
-    loadOrders();
+    // Show the change right away rather than waiting on a round trip.
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
+    try {
+      const res = await fetch("/api/orders", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status }),
+      });
+      if (!res.ok) throw new Error("Save failed");
+    } catch (err) {
+      alert("That status change didn't save — please try again.");
+      loadOrders(); // pull the real state back from the database
+    }
   }
 
   function formatPickup(order) {
