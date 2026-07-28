@@ -32,6 +32,20 @@ function initialImages(initial) {
   return initial.image_url ? [initial.image_url] : [];
 }
 
+function initialOptionGroup(initial) {
+  if (!initial?.options) return null;
+  try {
+    return JSON.parse(initial.options);
+  } catch (e) {
+    return null;
+  }
+}
+
+const BLANK_CHOICES = [
+  { label: "", priceDelta: "0.00" },
+  { label: "", priceDelta: "0.00" },
+];
+
 export default function AdminProductForm({ initial, onSaved, onCancel }) {
   const [name, setName] = useState(initial?.name || "");
   const [description, setDescription] = useState(initial?.description || "");
@@ -49,6 +63,19 @@ export default function AdminProductForm({ initial, onSaved, onCancel }) {
   const [hidden, setHidden] = useState(
     initial ? Boolean(initial.hidden) : false
   );
+
+  const existingOptions = initialOptionGroup(initial);
+  const [hasOptions, setHasOptions] = useState(Boolean(existingOptions));
+  const [optionLabel, setOptionLabel] = useState(existingOptions?.label || "");
+  const [choices, setChoices] = useState(
+    existingOptions?.choices?.length
+      ? existingOptions.choices.map((c) => ({
+          label: c.label,
+          priceDelta: ((c.price_delta_cents || 0) / 100).toFixed(2),
+        }))
+      : BLANK_CHOICES
+  );
+
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -76,6 +103,18 @@ export default function AdminProductForm({ initial, onSaved, onCancel }) {
     setImages((prev) => prev.filter((_, i) => i !== index));
   }
 
+  function updateChoice(index, key, value) {
+    setChoices((prev) => prev.map((c, i) => (i === index ? { ...c, [key]: value } : c)));
+  }
+
+  function addChoice() {
+    setChoices((prev) => [...prev, { label: "", priceDelta: "0.00" }]);
+  }
+
+  function removeChoice(index) {
+    setChoices((prev) => prev.filter((_, i) => i !== index));
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
@@ -89,6 +128,21 @@ export default function AdminProductForm({ initial, onSaved, onCancel }) {
       return;
     }
 
+    let optionsPayload = null;
+    if (hasOptions) {
+      const cleanChoices = choices
+        .filter((c) => c.label.trim())
+        .map((c) => ({
+          label: c.label.trim(),
+          price_delta_cents: Math.round((parseFloat(c.priceDelta) || 0) * 100),
+        }));
+      if (!optionLabel.trim() || cleanChoices.length < 2) {
+        setError('Give the option a name (like "Size") and at least two choices, or turn options off.');
+        return;
+      }
+      optionsPayload = { label: optionLabel.trim(), choices: cleanChoices };
+    }
+
     setSaving(true);
     const payload = {
       name: name.trim(),
@@ -99,6 +153,7 @@ export default function AdminProductForm({ initial, onSaved, onCancel }) {
       category,
       featured,
       hidden,
+      options: optionsPayload,
     };
 
     const url = initial ? `/api/products/${initial.id}` : "/api/products";
@@ -126,6 +181,9 @@ export default function AdminProductForm({ initial, onSaved, onCancel }) {
       setAvailable(true);
       setFeatured(false);
       setHidden(false);
+      setHasOptions(false);
+      setOptionLabel("");
+      setChoices(BLANK_CHOICES);
     }
     onSaved?.();
   }
@@ -203,6 +261,9 @@ export default function AdminProductForm({ initial, onSaved, onCancel }) {
           onChange={(e) => setPrice(e.target.value)}
           placeholder="8.00"
         />
+        <p style={{ fontSize: "0.75rem", color: "rgba(38,55,42,0.5)", marginTop: "4px" }}>
+          If this product has choices with different prices (below), enter the base/default price here.
+        </p>
       </div>
 
       <div className="field">
@@ -219,6 +280,64 @@ export default function AdminProductForm({ initial, onSaved, onCancel }) {
           ))}
         </select>
       </div>
+
+      <div className="field">
+        <label className="availability-toggle">
+          <input
+            type="checkbox"
+            checked={hasOptions}
+            onChange={(e) => setHasOptions(e.target.checked)}
+          />
+          This product has size or flavor choices
+        </label>
+      </div>
+
+      {hasOptions ? (
+        <div className="field" style={{ border: "1px solid var(--line)", borderRadius: "8px", padding: "14px" }}>
+          <label htmlFor="optionLabel">Choice name (e.g. &quot;Size&quot; or &quot;Flavor&quot;)</label>
+          <input
+            id="optionLabel"
+            type="text"
+            value={optionLabel}
+            onChange={(e) => setOptionLabel(e.target.value)}
+            placeholder="Size"
+            style={{ marginBottom: "14px" }}
+          />
+
+          <label>Choices customers can pick from</label>
+          {choices.map((choice, i) => (
+            <div key={i} style={{ display: "flex", gap: "8px", marginBottom: "8px", alignItems: "center" }}>
+              <input
+                type="text"
+                value={choice.label}
+                onChange={(e) => updateChoice(i, "label", e.target.value)}
+                placeholder={i === 0 ? "Large loaf" : "Small loaf"}
+                style={{ flex: 2 }}
+              />
+              <input
+                type="number"
+                step="0.01"
+                value={choice.priceDelta}
+                onChange={(e) => updateChoice(i, "priceDelta", e.target.value)}
+                placeholder="0.00"
+                style={{ flex: 1 }}
+                title="Price difference from the base price above. Use a negative number for a discount, e.g. -2.00"
+              />
+              {choices.length > 2 ? (
+                <button type="button" className="link-btn" onClick={() => removeChoice(i)}>
+                  Remove
+                </button>
+              ) : null}
+            </div>
+          ))}
+          <button type="button" className="link-btn" onClick={addChoice}>
+            + Add another choice
+          </button>
+          <p style={{ fontSize: "0.75rem", color: "rgba(38,55,42,0.5)", marginTop: "8px" }}>
+            The number next to each choice is added to (or, if negative, subtracted from) the base price. Leave at 0.00 if every choice costs the same.
+          </p>
+        </div>
+      ) : null}
 
       <div className="field">
         <label className="availability-toggle">
