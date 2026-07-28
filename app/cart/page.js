@@ -95,6 +95,11 @@ export default function CartPage() {
                 <img src={item.image_url || undefined} alt="" />
                 <div>
                   <p className="cart-row-name">{item.name}</p>
+                  {item.optionLabel && item.choiceValue ? (
+                    <p className="cart-row-price" style={{ marginBottom: "2px" }}>
+                      {item.optionLabel}: {item.choiceValue}
+                    </p>
+                  ) : null}
                   <p className="cart-row-price">
                     ${(item.price_cents / 100).toFixed(2)} each
                   </p>
