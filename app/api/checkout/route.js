@@ -59,11 +59,15 @@ export async function POST(request) {
       { status: 400 }
     );
   }
-  const ids = items.map((i) => i.id);
-  const placeholders = ids.map(() => "?").join(",");
+
+  // Cart line items are keyed by "productId" or "productId::choiceValue"
+  // (for items with a size/flavor picked), so look products up by the
+  // underlying productId, not the cart line's own id.
+  const productIds = [...new Set(items.map((i) => i.productId || i.id))];
+  const placeholders = productIds.map(() => "?").join(",");
   const result = await db.execute({
     sql: `SELECT * FROM products WHERE id IN (${placeholders})`,
-    args: ids,
+    args: productIds,
   });
 
   const productsById = Object.fromEntries(result.rows.map((p) => [p.id, p]));
@@ -73,22 +77,49 @@ export async function POST(request) {
   let subtotalCents = 0;
 
   for (const item of items) {
-    const product = productsById[item.id];
+    const productId = item.productId || item.id;
+    const product = productsById[productId];
     if (!product || !product.available) {
       return NextResponse.json(
         { error: `"${item.name}" is no longer available. Please remove it from your cart.` },
         { status: 400 }
       );
     }
+
+    // Always trust the database for pricing -- never the price the
+    // browser sent -- including any option price adjustment.
+    let unitAmount = product.price_cents;
+    let displayName = product.name;
+
+    if (item.choiceValue) {
+      let optionGroup = null;
+      try {
+        optionGroup = product.options ? JSON.parse(product.options) : null;
+      } catch (e) {
+        optionGroup = null;
+      }
+      const matchedChoice = optionGroup?.choices?.find(
+        (c) => c.label === item.choiceValue
+      );
+      if (!matchedChoice) {
+        return NextResponse.json(
+          { error: `"${item.name}" — that option isn't available anymore. Please remove it from your cart and re-add it.` },
+          { status: 400 }
+        );
+      }
+      unitAmount = product.price_cents + (matchedChoice.price_delta_cents || 0);
+      displayName = `${product.name} — ${matchedChoice.label}`;
+    }
+
     const qty = Math.max(1, Math.min(50, Math.round(item.qty)));
-    subtotalCents += product.price_cents * qty;
+    subtotalCents += unitAmount * qty;
     line_items.push({
       quantity: qty,
       price_data: {
         currency: "usd",
-        unit_amount: product.price_cents,
+        unit_amount: unitAmount,
         product_data: {
-          name: product.name,
+          name: displayName,
           images: product.image_url ? [product.image_url] : [],
         },
       },
