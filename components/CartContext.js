@@ -25,20 +25,29 @@ export function CartProvider({ children }) {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items, hydrated]);
 
-  function addItem(product) {
+  // `choice` is optional: { label: "Size", value: "Small loaf", priceDeltaCents: -200 }
+  // Each distinct choice becomes its own cart line, since it can carry a
+  // different price and needs to show up separately on the order.
+  function addItem(product, choice) {
+    const lineId = choice ? `${product.id}::${choice.value}` : product.id;
+    const priceCents = product.price_cents + (choice?.priceDeltaCents || 0);
+
     setItems((prev) => {
-      const existing = prev.find((i) => i.id === product.id);
+      const existing = prev.find((i) => i.id === lineId);
       if (existing) {
         return prev.map((i) =>
-          i.id === product.id ? { ...i, qty: i.qty + 1 } : i
+          i.id === lineId ? { ...i, qty: i.qty + 1 } : i
         );
       }
       return [
         ...prev,
         {
-          id: product.id,
+          id: lineId,
+          productId: product.id,
           name: product.name,
-          price_cents: product.price_cents,
+          optionLabel: choice?.label || null,
+          choiceValue: choice?.value || null,
+          price_cents: priceCents,
           image_url: product.image_url,
           qty: 1,
         },
