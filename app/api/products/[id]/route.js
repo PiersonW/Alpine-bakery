@@ -4,14 +4,10 @@ import { getDb, ensureSchema } from "../../../../lib/db";
 export async function PUT(request, { params }) {
   await ensureSchema();
   const body = await request.json();
-  const { name, description, price_cents, image_url, image_urls, available, category, featured, hidden } = body;
+  const { name, description, price_cents, image_url, image_urls, available, category, featured, hidden, options } = body;
 
   const db = getDb();
 
-  // image_urls arrives as a real array from the edit form, but as an
-  // already-JSON-encoded string when a quick-toggle action (like
-  // Feature/Hide) spreads an existing product row instead of resubmitting
-  // the form -- handle both so a toggle never wipes out saved photos.
   let imageUrlValue = image_url || null;
   let imageUrlsValue;
 
@@ -25,9 +21,22 @@ export async function PUT(request, { params }) {
     imageUrlsValue = JSON.stringify([]);
   }
 
+  // Same spread-vs-form issue as images: a quick-toggle action (Feature/Hide)
+  // spreads the existing product row, where `options` is already a JSON
+  // string (or null) rather than a fresh object -- handle both so a toggle
+  // never wipes out saved options.
+  let optionsValue;
+  if (options && typeof options === "object") {
+    optionsValue = JSON.stringify(options);
+  } else if (typeof options === "string") {
+    optionsValue = options;
+  } else {
+    optionsValue = null;
+  }
+
   await db.execute({
     sql: `UPDATE products
-          SET name = ?, description = ?, price_cents = ?, image_url = ?, image_urls = ?, available = ?, category = ?, featured = ?, hidden = ?
+          SET name = ?, description = ?, price_cents = ?, image_url = ?, image_urls = ?, available = ?, category = ?, featured = ?, hidden = ?, options = ?
           WHERE id = ?`,
     args: [
       name,
@@ -39,6 +48,7 @@ export async function PUT(request, { params }) {
       category || "Other",
       featured ? 1 : 0,
       hidden ? 1 : 0,
+      optionsValue,
       params.id,
     ],
   });
