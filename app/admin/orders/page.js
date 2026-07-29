@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import AdminManualOrderForm from "../../../components/AdminManualOrderForm";
 
 const STATUS_OPTIONS = ["new", "in progress", "picked up", "cancelled"];
 
@@ -150,6 +151,7 @@ export default function AdminOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [showManualForm, setShowManualForm] = useState(false);
 
   async function loadOrders() {
     setLoading(true);
@@ -198,6 +200,13 @@ export default function AdminOrdersPage() {
             Alpine Bakery — Orders
           </span>
           <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+            <button
+              className="link-btn"
+              style={{ color: "var(--snowcap)", fontSize: "0.9rem" }}
+              onClick={() => setShowManualForm((v) => !v)}
+            >
+              {showManualForm ? "Cancel" : "+ Add phone order"}
+            </button>
             <a href="/admin" style={{ color: "var(--snowcap)", fontSize: "0.9rem" }}>
               Back to products
             </a>
@@ -209,6 +218,18 @@ export default function AdminOrdersPage() {
       </header>
 
       <main className="admin-main">
+        {showManualForm ? (
+          <div className="container" style={{ marginBottom: "24px" }}>
+            <AdminManualOrderForm
+              onSaved={() => {
+                setShowManualForm(false);
+                loadOrders();
+              }}
+              onCancel={() => setShowManualForm(false)}
+            />
+          </div>
+        ) : null}
+
         <div className="container" style={{ marginBottom: "24px" }}>
           <OrdersCalendar orders={orders} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
         </div>
@@ -240,7 +261,10 @@ export default function AdminOrdersPage() {
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
                       <div>
-                        <div className="name">Pickup: {formatPickup(order)}</div>
+                        <div className="name">
+                          {order.customer_name ? `${order.customer_name} — ` : ""}
+                          Pickup: {formatPickup(order)}
+                        </div>
                         <div className="price" style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                           {order.customer_email ? (
                             <a href={`mailto:${order.customer_email}`}>{order.customer_email}</a>
