@@ -76,3 +76,16 @@ export async function PUT(request) {
   });
   return NextResponse.json({ success: true });
 }
+
+export async function DELETE(request) {
+  const { id } = await request.json();
+  if (!id) {
+    return NextResponse.json({ error: "id is required" }, { status: 400 });
+  }
+  const db = getDb();
+  await db.execute({
+    sql: "DELETE FROM orders WHERE id = ?",
+    args: [id],
+  });
+  return NextResponse.json({ success: true });
+}
