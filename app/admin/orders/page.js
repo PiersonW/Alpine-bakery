@@ -181,6 +181,23 @@ export default function AdminOrdersPage() {
     }
   }
 
+  async function handleDelete(order) {
+    const label = order.customer_name || order.customer_email || "this order";
+    if (!window.confirm(`Delete ${label}? This can't be undone.`)) return;
+    setOrders((prev) => prev.filter((o) => o.id !== order.id));
+    try {
+      const res = await fetch("/api/orders", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: order.id }),
+      });
+      if (!res.ok) throw new Error("Delete failed");
+    } catch (err) {
+      alert("Couldn't delete that order — please try again.");
+      loadOrders();
+    }
+  }
+
   function formatPickup(order) {
     if (!order.pickup_date) return "Not specified";
     let text = formatDate(order.pickup_date);
@@ -281,16 +298,25 @@ export default function AdminOrdersPage() {
                           )}
                         </div>
                       </div>
-                      <select
-                        value={order.status}
-                        onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                      >
-                        {STATUS_OPTIONS.map((s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        ))}
-                      </select>
+                      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                        <select
+                          value={order.status}
+                          onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                        >
+                          {STATUS_OPTIONS.map((s) => (
+                            <option key={s} value={s}>
+                              {s}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          className="link-btn"
+                          onClick={() => handleDelete(order)}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
 
                     <ul style={{ margin: 0, paddingLeft: "20px" }}>
