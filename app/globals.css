@@ -1014,3 +1014,44 @@ button {
   color: var(--berry);
   font-weight: 600;
 }
+
+/* ---------- Announcement board ---------- */
+.announcements {
+  padding: 40px 0 8px;
+}
+
+.announcements h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  margin: 0 0 18px;
+  color: var(--espresso);
+}
+
+.announcement-list {
+  display: grid;
+  gap: 14px;
+}
+
+.announcement-card {
+  background: var(--ivory);
+  border-left: 3px solid var(--rose-deep);
+  padding: 14px 18px;
+  border-radius: 6px;
+}
+
+.announcement-date {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--rose-deep);
+  margin-bottom: 4px;
+  display: block;
+}
+
+.announcement-message {
+  margin: 0;
+  color: var(--espresso-soft);
+  font-size: 0.98rem;
+  white-space: pre-wrap;
+}
