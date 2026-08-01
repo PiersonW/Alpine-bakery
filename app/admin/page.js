@@ -6,6 +6,7 @@ import AdminProductForm from "../../components/AdminProductForm";
 import AdminBlockedDates from "../../components/AdminBlockedDates";
 import AdminBulkImport from "../../components/AdminBulkImport";
 import AdminPickupSettings from "../../components/AdminPickupSettings";
+import AdminAnnouncements from "../../components/AdminAnnouncements";
 
 export default function AdminPage() {
   const [products, setProducts] = useState([]);
@@ -140,6 +141,10 @@ export default function AdminPage() {
               <AdminBulkImport onImported={loadProducts} />
             </div>
           </div>
+        </div>
+
+        <div className="container" style={{ marginTop: "40px" }}>
+          <AdminAnnouncements />
         </div>
 
         <div className="container" style={{ marginTop: "40px" }}>
