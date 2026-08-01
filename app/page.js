@@ -2,12 +2,20 @@ import Navbar from "../components/Navbar";
 import Ridge from "../components/Ridge";
 import ProductCard from "../components/ProductCard";
 import { getFeaturedProducts } from "../lib/products";
+import { getRecentAnnouncements } from "../lib/announcements";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+function formatAnnouncementDate(dateStr) {
+  // Stored as SQLite UTC "YYYY-MM-DD HH:MM:SS"
+  const d = new Date(dateStr.replace(" ", "T") + "Z");
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 export default async function HomePage() {
   const products = await getFeaturedProducts();
+  const announcements = await getRecentAnnouncements();
 
   return (
     <>
@@ -33,6 +41,24 @@ export default async function HomePage() {
         </div>
         <Ridge />
       </header>
+
+      {announcements.length > 0 ? (
+        <section className="announcements">
+          <div className="container">
+            <h2>Weekly updates</h2>
+            <div className="announcement-list">
+              {announcements.map((a) => (
+                <div className="announcement-card" key={a.id}>
+                  <span className="announcement-date">
+                    {formatAnnouncementDate(a.created_at)}
+                  </span>
+                  <p className="announcement-message">{a.message}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <main className="shop" id="shop">
         <div className="container">
