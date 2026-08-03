@@ -8,6 +8,7 @@ const ALLOWED_SIZES = ["small", "medium", "large", "xlarge"];
 const ALLOWED_WEIGHTS = ["normal", "bold"];
 const ALLOWED_STYLES = ["normal", "italic"];
 const ALLOWED_ALIGNS = ["left", "center"];
+const ALLOWED_FONTS = ["body", "display", "mono"];
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 
 export async function GET() {
@@ -36,14 +37,15 @@ export async function POST(request) {
   const font_style = ALLOWED_STYLES.includes(body.font_style) ? body.font_style : "normal";
   const text_align = ALLOWED_ALIGNS.includes(body.text_align) ? body.text_align : "left";
   const font_color = HEX_COLOR.test(body.font_color || "") ? body.font_color : "#3d2e24";
+  const font_family = ALLOWED_FONTS.includes(body.font_family) ? body.font_family : "body";
 
   const db = getDb();
   const id = randomUUID();
   await db.execute({
     sql: `INSERT INTO announcements
-            (id, message, font_size, font_color, font_weight, font_style, text_align)
-          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    args: [id, message.trim(), font_size, font_color, font_weight, font_style, text_align],
+            (id, message, font_size, font_color, font_weight, font_style, text_align, font_family)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [id, message.trim(), font_size, font_color, font_weight, font_style, text_align, font_family],
   });
   return NextResponse.json({ id });
 }
