@@ -21,9 +21,16 @@ const SIZE_PX = {
 };
 
 const FONT_CSS = {
-  body: "var(--font-body)",
-  display: "var(--font-display)",
-  mono: "var(--font-mono)",
+  body: '"Work Sans", sans-serif',
+  display: '"Fraunces", serif',
+  mono: '"JetBrains Mono", monospace',
+  playfair: '"Playfair Display", serif',
+  poppins: '"Poppins", sans-serif',
+  caveat: '"Caveat", cursive',
+  pacifico: '"Pacifico", cursive',
+  dancing: '"Dancing Script", cursive',
+  oswald: '"Oswald", sans-serif',
+  merriweather: '"Merriweather", serif',
 };
 
 function announcementStyle(a) {
