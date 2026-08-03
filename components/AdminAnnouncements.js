@@ -9,6 +9,17 @@ const SIZE_OPTIONS = [
   { value: "xlarge", label: "Extra Large", px: "1.6rem" },
 ];
 
+const FONT_OPTIONS = [
+  { value: "body", label: "Classic (Work Sans)", css: "var(--font-body)" },
+  { value: "display", label: "Elegant Serif (Fraunces)", css: "var(--font-display)" },
+  { value: "mono", label: "Typewriter (JetBrains Mono)", css: "var(--font-mono)" },
+];
+
+function fontToCss(font) {
+  const match = FONT_OPTIONS.find((f) => f.value === font);
+  return match ? match.css : "var(--font-body)";
+}
+
 function sizeToPx(size) {
   const match = SIZE_OPTIONS.find((s) => s.value === size);
   return match ? match.px : "1rem";
@@ -37,6 +48,7 @@ export default function AdminAnnouncements() {
   const [announcements, setAnnouncements] = useState([]);
   const [message, setMessage] = useState("");
   const [fontSize, setFontSize] = useState("medium");
+  const [fontFamily, setFontFamily] = useState("body");
   const [fontColor, setFontColor] = useState("#3d2e24");
   const [bold, setBold] = useState(false);
   const [italic, setItalic] = useState(false);
@@ -71,6 +83,7 @@ export default function AdminAnnouncements() {
       body: JSON.stringify({
         message,
         font_size: fontSize,
+        font_family: fontFamily,
         font_color: fontColor,
         font_weight: bold ? "bold" : "normal",
         font_style: italic ? "italic" : "normal",
@@ -98,6 +111,7 @@ export default function AdminAnnouncements() {
 
   const previewStyle = {
     fontSize: sizeToPx(fontSize),
+    fontFamily: fontToCss(fontFamily),
     color: fontColor,
     fontWeight: bold ? 700 : 400,
     fontStyle: italic ? "italic" : "normal",
@@ -129,6 +143,21 @@ export default function AdminAnnouncements() {
             marginTop: "12px",
           }}
         >
+          <label style={{ fontSize: "0.85rem" }}>
+            Font{" "}
+            <select
+              value={fontFamily}
+              onChange={(e) => setFontFamily(e.target.value)}
+              style={{ marginLeft: "4px" }}
+            >
+              {FONT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
           <label style={{ fontSize: "0.85rem" }}>
             Size{" "}
             <select
@@ -219,6 +248,7 @@ export default function AdminAnnouncements() {
                 <span
                   style={{
                     fontSize: sizeToPx(a.font_size),
+                    fontFamily: fontToCss(a.font_family),
                     color: a.font_color,
                     fontWeight: a.font_weight === "bold" ? 700 : 400,
                     fontStyle: a.font_style === "italic" ? "italic" : "normal",
