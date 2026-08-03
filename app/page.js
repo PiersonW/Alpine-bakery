@@ -20,9 +20,16 @@ const SIZE_PX = {
   xlarge: "1.6rem",
 };
 
+const FONT_CSS = {
+  body: "var(--font-body)",
+  display: "var(--font-display)",
+  mono: "var(--font-mono)",
+};
+
 function announcementStyle(a) {
   return {
     fontSize: SIZE_PX[a.font_size] || SIZE_PX.medium,
+    fontFamily: FONT_CSS[a.font_family] || FONT_CSS.body,
     color: a.font_color || "#3d2e24",
     fontWeight: a.font_weight === "bold" ? 700 : 400,
     fontStyle: a.font_style === "italic" ? "italic" : "normal",
