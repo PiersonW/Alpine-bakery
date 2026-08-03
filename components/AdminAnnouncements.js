@@ -2,15 +2,45 @@
 
 import { useEffect, useState } from "react";
 
+const SIZE_OPTIONS = [
+  { value: "small", label: "Small", px: "0.85rem" },
+  { value: "medium", label: "Medium", px: "1rem" },
+  { value: "large", label: "Large", px: "1.25rem" },
+  { value: "xlarge", label: "Extra Large", px: "1.6rem" },
+];
+
+function sizeToPx(size) {
+  const match = SIZE_OPTIONS.find((s) => s.value === size);
+  return match ? match.px : "1rem";
+}
+
 function formatDate(dateStr) {
   // Stored as SQLite UTC "YYYY-MM-DD HH:MM:SS"
   const d = new Date(dateStr.replace(" ", "T") + "Z");
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+function toggleBtnStyle(active) {
+  return {
+    minWidth: "42px",
+    padding: "8px 12px",
+    borderRadius: "8px",
+    border: active ? "1px solid #3d2e24" : "1px solid rgba(61,46,36,0.25)",
+    background: active ? "#3d2e24" : "transparent",
+    color: active ? "#f7f2ea" : "#3d2e24",
+    fontWeight: 600,
+    cursor: "pointer",
+  };
+}
+
 export default function AdminAnnouncements() {
   const [announcements, setAnnouncements] = useState([]);
   const [message, setMessage] = useState("");
+  const [fontSize, setFontSize] = useState("medium");
+  const [fontColor, setFontColor] = useState("#3d2e24");
+  const [bold, setBold] = useState(false);
+  const [italic, setItalic] = useState(false);
+  const [align, setAlign] = useState("left");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -38,7 +68,14 @@ export default function AdminAnnouncements() {
     const res = await fetch("/api/announcements", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({
+        message,
+        font_size: fontSize,
+        font_color: fontColor,
+        font_weight: bold ? "bold" : "normal",
+        font_style: italic ? "italic" : "normal",
+        text_align: align,
+      }),
     });
     setSaving(false);
     if (!res.ok) {
@@ -59,6 +96,15 @@ export default function AdminAnnouncements() {
     });
   }
 
+  const previewStyle = {
+    fontSize: sizeToPx(fontSize),
+    color: fontColor,
+    fontWeight: bold ? 700 : 400,
+    fontStyle: italic ? "italic" : "normal",
+    textAlign: align,
+    margin: 0,
+  };
+
   return (
     <div className="card">
       <h2>Homepage announcements</h2>
@@ -73,6 +119,85 @@ export default function AdminAnnouncements() {
           onChange={(e) => setMessage(e.target.value)}
           placeholder="This week: sourdough Saturday, and a small batch of cinnamon rolls Friday only!"
         />
+
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "10px",
+            alignItems: "center",
+            marginTop: "12px",
+          }}
+        >
+          <label style={{ fontSize: "0.85rem" }}>
+            Size{" "}
+            <select
+              value={fontSize}
+              onChange={(e) => setFontSize(e.target.value)}
+              style={{ marginLeft: "4px" }}
+            >
+              {SIZE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label style={{ fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "4px" }}>
+            Color
+            <input
+              type="color"
+              value={fontColor}
+              onChange={(e) => setFontColor(e.target.value)}
+              style={{ width: "32px", height: "28px", padding: 0, border: "none", cursor: "pointer" }}
+            />
+          </label>
+
+          <button
+            type="button"
+            onClick={() => setBold((b) => !b)}
+            style={toggleBtnStyle(bold)}
+            aria-pressed={bold}
+            title="Bold"
+          >
+            B
+          </button>
+          <button
+            type="button"
+            onClick={() => setItalic((i) => !i)}
+            style={{ ...toggleBtnStyle(italic), fontStyle: "italic" }}
+            aria-pressed={italic}
+            title="Italic"
+          >
+            I
+          </button>
+          <button
+            type="button"
+            onClick={() => setAlign((a) => (a === "left" ? "center" : "left"))}
+            style={toggleBtnStyle(align === "center")}
+            aria-pressed={align === "center"}
+            title="Center align"
+          >
+            {align === "center" ? "Centered" : "Left"}
+          </button>
+        </div>
+
+        <div
+          style={{
+            marginTop: "12px",
+            padding: "14px 16px",
+            border: "1px dashed rgba(61,46,36,0.3)",
+            borderRadius: "10px",
+            background: "rgba(61,46,36,0.03)",
+          }}
+        >
+          <p style={{ fontSize: "0.75rem", color: "rgba(38,55,42,0.55)", margin: "0 0 6px" }}>
+            Preview
+          </p>
+          <p style={previewStyle}>{message.trim() || "Your update will look like this."}</p>
+        </div>
+
         {error ? <p className="error-text">{error}</p> : null}
         <button className="btn btn-primary" disabled={saving} style={{ marginTop: "10px" }}>
           {saving ? "Posting…" : "Post update"}
@@ -90,7 +215,17 @@ export default function AdminAnnouncements() {
           announcements.map((a) => (
             <div className="blocked-date-row" key={a.id}>
               <span>
-                <strong>{formatDate(a.created_at)}</strong> — {a.message}
+                <strong>{formatDate(a.created_at)}</strong> —{" "}
+                <span
+                  style={{
+                    fontSize: sizeToPx(a.font_size),
+                    color: a.font_color,
+                    fontWeight: a.font_weight === "bold" ? 700 : 400,
+                    fontStyle: a.font_style === "italic" ? "italic" : "normal",
+                  }}
+                >
+                  {a.message}
+                </span>
               </span>
               <button className="link-btn" onClick={() => handleDelete(a.id)}>
                 Delete
