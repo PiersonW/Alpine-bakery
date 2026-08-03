@@ -13,6 +13,23 @@ function formatAnnouncementDate(dateStr) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+const SIZE_PX = {
+  small: "0.85rem",
+  medium: "1rem",
+  large: "1.25rem",
+  xlarge: "1.6rem",
+};
+
+function announcementStyle(a) {
+  return {
+    fontSize: SIZE_PX[a.font_size] || SIZE_PX.medium,
+    color: a.font_color || "#3d2e24",
+    fontWeight: a.font_weight === "bold" ? 700 : 400,
+    fontStyle: a.font_style === "italic" ? "italic" : "normal",
+    textAlign: a.text_align === "center" ? "center" : "left",
+  };
+}
+
 export default async function HomePage() {
   const products = await getFeaturedProducts();
   const announcements = await getRecentAnnouncements();
@@ -52,7 +69,9 @@ export default async function HomePage() {
                   <span className="announcement-date">
                     {formatAnnouncementDate(a.created_at)}
                   </span>
-                  <p className="announcement-message">{a.message}</p>
+                  <p className="announcement-message" style={announcementStyle(a)}>
+                    {a.message}
+                  </p>
                 </div>
               ))}
             </div>
