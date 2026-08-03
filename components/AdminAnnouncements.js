@@ -10,9 +10,16 @@ const SIZE_OPTIONS = [
 ];
 
 const FONT_OPTIONS = [
-  { value: "body", label: "Classic (Work Sans)", css: "var(--font-body)" },
-  { value: "display", label: "Elegant Serif (Fraunces)", css: "var(--font-display)" },
-  { value: "mono", label: "Typewriter (JetBrains Mono)", css: "var(--font-mono)" },
+  { value: "body", label: "Classic (Work Sans)", css: '"Work Sans", sans-serif' },
+  { value: "display", label: "Elegant Serif (Fraunces)", css: '"Fraunces", serif' },
+  { value: "mono", label: "Typewriter (JetBrains Mono)", css: '"JetBrains Mono", monospace' },
+  { value: "playfair", label: "Classic Serif (Playfair Display)", css: '"Playfair Display", serif' },
+  { value: "poppins", label: "Modern Sans (Poppins)", css: '"Poppins", sans-serif' },
+  { value: "caveat", label: "Handwritten (Caveat)", css: '"Caveat", cursive' },
+  { value: "pacifico", label: "Playful Script (Pacifico)", css: '"Pacifico", cursive' },
+  { value: "dancing", label: "Elegant Script (Dancing Script)", css: '"Dancing Script", cursive' },
+  { value: "oswald", label: "Bold Condensed (Oswald)", css: '"Oswald", sans-serif' },
+  { value: "merriweather", label: "Traditional Serif (Merriweather)", css: '"Merriweather", serif' },
 ];
 
 function fontToCss(font) {
