@@ -8,7 +8,10 @@ const ALLOWED_SIZES = ["small", "medium", "large", "xlarge"];
 const ALLOWED_WEIGHTS = ["normal", "bold"];
 const ALLOWED_STYLES = ["normal", "italic"];
 const ALLOWED_ALIGNS = ["left", "center"];
-const ALLOWED_FONTS = ["body", "display", "mono"];
+const ALLOWED_FONTS = [
+  "body", "display", "mono", "playfair", "poppins",
+  "caveat", "pacifico", "dancing", "oswald", "merriweather",
+];
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 
 export async function GET() {
