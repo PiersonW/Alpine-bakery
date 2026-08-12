@@ -6,6 +6,8 @@ import DatePicker from "../../components/DatePicker";
 import { useCart } from "../../components/CartContext";
 import { generatePickupTimes, formatPickupTime } from "../../lib/pickupTimes";
 
+const MIN_NOTICE_HOURS = 48;
+
 function formatPretty(dateKey) {
   const [y, m, d] = dateKey.split("-").map(Number);
   return new Date(y, m - 1, d).toLocaleDateString(undefined, {
@@ -13,6 +15,19 @@ function formatPretty(dateKey) {
     month: "long",
     day: "numeric",
   });
+}
+
+function toDateKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function toTimeValue(date) {
+  const h = String(date.getHours()).padStart(2, "0");
+  const m = String(date.getMinutes()).padStart(2, "0");
+  return `${h}:${m}`;
 }
 
 export default function CartPage() {
@@ -40,11 +55,35 @@ export default function CartPage() {
       .catch(() => {});
   }, []);
 
-  const timeOptions = generatePickupTimes(
+  // The earliest moment someone can actually pick up an order — right now
+  // plus the required notice window. Recomputed on every render, which is
+  // "live enough" since the page re-renders whenever the customer interacts.
+  const cutoff = new Date(Date.now() + MIN_NOTICE_HOURS * 60 * 60 * 1000);
+  const cutoffDateKey = toDateKey(cutoff);
+  const cutoffTimeValue = toTimeValue(cutoff);
+
+  const allTimeOptions = generatePickupTimes(
     pickupWindow.pickup_start,
     pickupWindow.pickup_end,
     pickupWindow.pickup_interval_minutes
   );
+
+  // On the cutoff day itself, only times at/after the cutoff clock time
+  // are far enough out. Any day after that, every time slot is fine.
+  const timeOptions =
+    pickupDate === cutoffDateKey
+      ? allTimeOptions.filter((t) => t.value >= cutoffTimeValue)
+      : allTimeOptions;
+
+  // If the customer picked a date/time and then enough time passed (or the
+  // window filter changed) that it's no longer valid, clear the time so
+  // they have to re-pick rather than silently keeping a too-soon selection.
+  useEffect(() => {
+    if (pickupTime && !timeOptions.some((t) => t.value === pickupTime)) {
+      setPickupTime("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pickupDate]);
 
   async function handleCheckout() {
     if (!pickupDate) {
@@ -134,13 +173,15 @@ export default function CartPage() {
               <h2>Pickup date &amp; time</h2>
               <p style={{ fontSize: "0.9rem", color: "rgba(38,55,42,0.7)", marginTop: "-10px" }}>
                 Everything is baked to order, so pick the day and time
-                you&rsquo;d like to swing by and grab it.
+                you&rsquo;d like to swing by and grab it. We need at least
+                48 hours&rsquo; notice.
               </p>
               <DatePicker
                 selected={pickupDate}
                 onSelect={setPickupDate}
                 disabledDates={blockedDates}
                 blockedDates={blockedDates}
+                minDateKey={cutoffDateKey}
                 monthsAhead={3}
               />
 
@@ -150,6 +191,7 @@ export default function CartPage() {
                   id="pickup-time"
                   value={pickupTime}
                   onChange={(e) => setPickupTime(e.target.value)}
+                  disabled={!pickupDate}
                 >
                   <option value="">Choose a time…</option>
                   {timeOptions.map((t) => (
@@ -158,6 +200,11 @@ export default function CartPage() {
                     </option>
                   ))}
                 </select>
+                {pickupDate && timeOptions.length === 0 ? (
+                  <p style={{ fontSize: "0.85rem", color: "rgba(38,55,42,0.7)", marginTop: "6px" }}>
+                    No times left that far out today — try the next available day.
+                  </p>
+                ) : null}
               </div>
 
               {pickupDate && pickupTime ? (
