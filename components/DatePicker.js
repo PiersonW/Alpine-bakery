@@ -24,9 +24,20 @@ function startOfToday() {
 /**
  * A small month-at-a-time calendar. Past dates and anything in
  * `disabledDates` (a Set of "YYYY-MM-DD" strings) can't be picked.
+ * `minDateKey`, if given, disables any date earlier than it (used to
+ * enforce a minimum advance-notice window) with the same "unavailable"
+ * styling as an admin-blocked date, just a different tooltip.
  * `monthsAhead` caps how far into the future someone can browse/pick.
  */
-export default function DatePicker({ selected, selectedDates, onSelect, disabledDates, blockedDates, monthsAhead = 3 }) {
+export default function DatePicker({
+  selected,
+  selectedDates,
+  onSelect,
+  disabledDates,
+  blockedDates,
+  minDateKey,
+  monthsAhead = 3,
+}) {
   const today = startOfToday();
   const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
 
@@ -79,8 +90,16 @@ export default function DatePicker({ selected, selectedDates, onSelect, disabled
           const isPast = date < today;
           const isFlaggedBlocked = blockedDates?.has(key);
           const isHardDisabled = disabledDates?.has(key);
-          const isDisabled = isPast || isHardDisabled;
+          const isTooSoon = Boolean(minDateKey) && key < minDateKey;
+          const isDisabled = isPast || isHardDisabled || isTooSoon;
+          const showUnavailableStyle = (isFlaggedBlocked || isTooSoon) && !isPast;
           const isSelected = selected === key || Boolean(selectedDates?.has(key));
+
+          let title;
+          if (!isPast) {
+            if (isFlaggedBlocked) title = "Not available for pickup";
+            else if (isTooSoon) title = "Needs at least 48 hours notice";
+          }
 
           return (
             <button
@@ -91,10 +110,10 @@ export default function DatePicker({ selected, selectedDates, onSelect, disabled
               className={
                 "datepicker-day" +
                 (isSelected ? " is-selected" : "") +
-                (isFlaggedBlocked && !isPast ? " is-blocked" : "") +
+                (showUnavailableStyle ? " is-blocked" : "") +
                 (isPast ? " is-past" : "")
               }
-              title={isFlaggedBlocked && !isPast ? "Not available for pickup" : undefined}
+              title={title}
             >
               {date.getDate()}
             </button>
