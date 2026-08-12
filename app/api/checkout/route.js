@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getDb, ensureSchema } from "../../../lib/db";
 
+const MIN_NOTICE_HOURS = 48;
+
 export async function POST(request) {
   await ensureSchema();
   const { items, pickup_date, pickup_time } = await request.json();
@@ -45,6 +47,20 @@ export async function POST(request) {
   if (chosenDate < today) {
     return NextResponse.json(
       { error: "That pickup date has already passed. Please pick another." },
+      { status: 400 }
+    );
+  }
+
+  // Enforce the owner's minimum-notice window -- never trust the browser
+  // to have applied this correctly, since the page could be stale or the
+  // request forged entirely.
+  const cutoff = new Date(Date.now() + MIN_NOTICE_HOURS * 60 * 60 * 1000);
+  const chosenDateTime = new Date(`${pickup_date}T${pickup_time}:00`);
+  if (chosenDateTime < cutoff) {
+    return NextResponse.json(
+      {
+        error: `Pickup needs at least ${MIN_NOTICE_HOURS} hours' notice. Please pick a later date or time.`,
+      },
       { status: 400 }
     );
   }
