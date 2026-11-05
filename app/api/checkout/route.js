@@ -3,6 +3,49 @@ import Stripe from "stripe";
 import { getDb, ensureSchema } from "../../../lib/db";
 
 const MIN_NOTICE_HOURS = 48;
+const BAKERY_TIME_ZONE = "America/Denver";
+
+// Turns a pickup date + time the customer chose ("2026-11-07", "10:00"),
+// which is Utah local time, into the real moment it happens. The server
+// runs on UTC, so `new Date("2026-11-07T10:00:00")` would wrongly read it
+// as 10:00 UTC (7 hours early in winter, 6 in summer).
+function bakeryLocalToDate(dateStr, timeStr) {
+  const asIfUtc = new Date(`${dateStr}T${timeStr}:00Z`);
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: BAKERY_TIME_ZONE,
+      hourCycle: "h23",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    })
+      .formatToParts(asIfUtc)
+      .map((p) => [p.type, p.value])
+  );
+  const utahWallClockAsUtc = Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour),
+    Number(parts.minute),
+    Number(parts.second)
+  );
+  const offsetMs = utahWallClockAsUtc - asIfUtc.getTime();
+  return new Date(asIfUtc.getTime() - offsetMs);
+}
+
+// Today's date in Utah as "YYYY-MM-DD".
+function bakeryTodayKey() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: BAKERY_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
 
 export async function POST(request) {
   await ensureSchema();
@@ -41,10 +84,7 @@ export async function POST(request) {
     );
   }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const chosenDate = new Date(pickup_date + "T00:00:00");
-  if (chosenDate < today) {
+  if (pickup_date < bakeryTodayKey()) {
     return NextResponse.json(
       { error: "That pickup date has already passed. Please pick another." },
       { status: 400 }
@@ -55,7 +95,7 @@ export async function POST(request) {
   // to have applied this correctly, since the page could be stale or the
   // request forged entirely.
   const cutoff = new Date(Date.now() + MIN_NOTICE_HOURS * 60 * 60 * 1000);
-  const chosenDateTime = new Date(`${pickup_date}T${pickup_time}:00`);
+  const chosenDateTime = bakeryLocalToDate(pickup_date, pickup_time);
   if (chosenDateTime < cutoff) {
     return NextResponse.json(
       {
