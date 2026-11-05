@@ -11,6 +11,11 @@ export async function middleware(request) {
 
   const needsAuth =
     pathname.startsWith("/admin") ||
+    // Orders hold customer names, emails and phone numbers: every method
+    // needs a login. (New Stripe orders arrive through the webhook, which
+    // has its own signature check and isn't under /api/orders.)
+    pathname.startsWith("/api/orders") ||
+    (pathname.startsWith("/api/announcements") && request.method !== "GET") ||
     (pathname.startsWith("/api/products") && request.method !== "GET") ||
     (pathname.startsWith("/api/blocked-dates") && request.method !== "GET") ||
     (pathname.startsWith("/api/settings") && request.method !== "GET");
@@ -33,5 +38,5 @@ export async function middleware(request) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/products/:path*", "/api/blocked-dates/:path*", "/api/settings/:path*"],
+  matcher: ["/admin/:path*", "/api/orders/:path*", "/api/announcements/:path*", "/api/products/:path*", "/api/blocked-dates/:path*", "/api/settings/:path*"],
 };
