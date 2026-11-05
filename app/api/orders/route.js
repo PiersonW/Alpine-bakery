@@ -1,8 +1,37 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
+import Stripe from "stripe";
 import { getDb, ensureSchema } from "../../../lib/db";
 
 export const dynamic = "force-dynamic";
+
+// Online orders saved before the webhook started recording the
+// customer's name have no name. Look each one up in Stripe once and
+// save it. If Stripe has no name either, save "" so we don't ask again.
+async function fillMissingNamesFromStripe(db, orders) {
+  const missing = orders.filter(
+    (o) => o.stripe_session_id && o.customer_name === null
+  );
+  if (missing.length === 0 || !process.env.STRIPE_SECRET_KEY) return;
+
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  await Promise.all(
+    missing.slice(0, 50).map(async (order) => {
+      try {
+        const session = await stripe.checkout.sessions.retrieve(order.stripe_session_id);
+        const name = (session.customer_details?.name || "").trim();
+        await db.execute({
+          sql: "UPDATE orders SET customer_name = ? WHERE id = ? AND customer_name IS NULL",
+          args: [name, order.id],
+        });
+        order.customer_name = name;
+      } catch (err) {
+        // Leave it for next time; the orders list still loads.
+        console.error("Couldn't look up name for order", order.id, err.message);
+      }
+    })
+  );
+}
 
 export async function GET() {
   await ensureSchema();
@@ -14,6 +43,7 @@ export async function GET() {
     ...row,
     items: JSON.parse(row.items || "[]"),
   }));
+  await fillMissingNamesFromStripe(db, orders);
   return NextResponse.json(orders, {
     headers: { "Cache-Control": "no-store" },
   });

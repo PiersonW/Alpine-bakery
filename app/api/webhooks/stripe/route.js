@@ -42,6 +42,7 @@ export async function POST(request) {
       await sendOwnerOrderEmail({
         pickupDate: session.metadata?.pickup_date || "not specified",
         pickupTime: session.metadata?.pickup_time || null,
+        customerName: session.customer_details?.name,
         customerEmail: session.customer_details?.email,
         customerPhone: session.customer_details?.phone,
         lineItems: lineItemsResult.data,
@@ -64,11 +65,12 @@ export async function POST(request) {
 
       await db.execute({
         sql: `INSERT OR IGNORE INTO orders
-              (id, stripe_session_id, customer_email, customer_phone, pickup_date, pickup_time, items, total_cents, status)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'new')`,
+              (id, stripe_session_id, customer_name, customer_email, customer_phone, pickup_date, pickup_time, items, total_cents, status)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'new')`,
         args: [
           session.id,
           session.id,
+          session.customer_details?.name || null,
           session.customer_details?.email || null,
           session.customer_details?.phone || null,
           session.metadata?.pickup_date || null,
