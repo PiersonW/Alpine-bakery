@@ -3,7 +3,21 @@
 import { useEffect, useState } from "react";
 import AdminManualOrderForm from "../../../components/AdminManualOrderForm";
 
-const STATUS_OPTIONS = ["new", "in progress", "picked up", "cancelled"];
+const STATUS_OPTIONS = ["new", "in progress", "ready for pickup", "picked up", "cancelled"];
+
+// Orders with these statuses are finished and move to the "Done" list.
+const DONE_STATUSES = ["picked up", "cancelled"];
+
+function isDone(order) {
+  return DONE_STATUSES.includes(order.status);
+}
+
+// "2026-11-07" + "10:00" -> "2026-11-07 10:00", which sorts correctly as
+// plain text. Orders with no pickup date sort after every dated order.
+function pickupSortKey(order) {
+  if (!order.pickup_date) return "9999-99-99 99:99";
+  return `${order.pickup_date} ${order.pickup_time || "00:00"}`;
+}
 
 function formatDate(dateStr) {
   if (!dateStr) return "Not specified";
@@ -152,6 +166,7 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(null);
   const [showManualForm, setShowManualForm] = useState(false);
+  const [view, setView] = useState("current"); // "current" or "done"
 
   async function loadOrders() {
     setLoading(true);
@@ -205,9 +220,21 @@ export default function AdminOrdersPage() {
     return text;
   }
 
-  const visibleOrders = selectedDate
+  const dateFiltered = selectedDate
     ? orders.filter((o) => o.pickup_date === selectedDate)
     : orders;
+
+  // Current: still to be made or picked up, nearest pickup at the top.
+  const currentOrders = dateFiltered
+    .filter((o) => !isDone(o))
+    .sort((a, b) => pickupSortKey(a).localeCompare(pickupSortKey(b)));
+
+  // Done: picked up or cancelled, most recent pickup at the top.
+  const doneOrders = dateFiltered
+    .filter((o) => isDone(o))
+    .sort((a, b) => pickupSortKey(b).localeCompare(pickupSortKey(a)));
+
+  const visibleOrders = view === "done" ? doneOrders : currentOrders;
 
   return (
     <div className="admin-shell">
@@ -255,19 +282,50 @@ export default function AdminOrdersPage() {
           <div className="card">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <h2>
-                Order queue
+                {view === "done" ? "Done orders" : "Current orders"}
                 {selectedDate ? ` — ${formatDate(selectedDate)}` : ""}
               </h2>
               {selectedDate && (
                 <button className="link-btn" onClick={() => setSelectedDate(null)}>
-                  Show all
+                  Show all dates
                 </button>
               )}
             </div>
+            <div style={{ display: "flex", gap: "8px", margin: "8px 0 16px" }}>
+              {[
+                { key: "current", label: `Current (${currentOrders.length})` },
+                { key: "done", label: `Done (${doneOrders.length})` },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setView(tab.key)}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "999px",
+                    border: "1px solid #2d4a3a",
+                    background: view === tab.key ? "#2d4a3a" : "transparent",
+                    color: view === tab.key ? "#fff" : "#2d4a3a",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            {view === "done" && (
+              <p style={{ marginTop: 0, opacity: 0.7, fontSize: "0.9rem" }}>
+                Picked up and cancelled orders. Change the status back to move one to Current.
+              </p>
+            )}
             {loading ? (
               <p>Loading…</p>
             ) : visibleOrders.length === 0 ? (
-              <p>No orders {selectedDate ? "for this date." : "yet."}</p>
+              <p>
+                {view === "done" ? "No done orders" : "No current orders"}
+                {selectedDate ? " for this date." : "."}
+              </p>
             ) : (
               <div className="admin-product-list">
                 {visibleOrders.map((order) => (
