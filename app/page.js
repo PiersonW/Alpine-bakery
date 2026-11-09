@@ -132,6 +132,9 @@ export default async function HomePage() {
                 Alpinebakery0901@gmail.com
               </a>
             </span>
+            <span>
+              <a href="/privacy">Privacy Policy</a>
+            </span>
           </div>
         </div>
       </footer>
