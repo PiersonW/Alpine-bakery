@@ -94,16 +94,65 @@ export async function POST(request) {
   return NextResponse.json({ id });
 }
 
+// Fields the owner can change on an existing order. Sending only
+// { id, status } still just changes the status.
+const EDITABLE = [
+  "customer_name",
+  "customer_email",
+  "customer_phone",
+  "pickup_date",
+  "pickup_time",
+  "items",
+  "total_cents",
+  "status",
+];
+
 export async function PUT(request) {
-  const { id, status } = await request.json();
-  if (!id || !status) {
-    return NextResponse.json({ error: "id and status are required" }, { status: 400 });
+  const body = await request.json();
+  const { id } = body;
+  if (!id) {
+    return NextResponse.json({ error: "id is required" }, { status: 400 });
   }
+
+  const sets = [];
+  const args = [];
+  for (const field of EDITABLE) {
+    if (!(field in body)) continue;
+    let value = body[field];
+    if (field === "items") {
+      if (!Array.isArray(value) || value.length === 0) {
+        return NextResponse.json({ error: "Add at least one item." }, { status: 400 });
+      }
+      value = JSON.stringify(value);
+    } else if (field === "total_cents") {
+      if (!Number.isInteger(value) || value <= 0) {
+        return NextResponse.json({ error: "Order total must be greater than $0." }, { status: 400 });
+      }
+    } else if (field === "status") {
+      if (!value) {
+        return NextResponse.json({ error: "status can't be empty" }, { status: 400 });
+      }
+    } else if (typeof value === "string") {
+      value = value.trim() || null;
+    } else if (value !== null) {
+      return NextResponse.json({ error: `${field} must be text` }, { status: 400 });
+    }
+    sets.push(`${field} = ?`);
+    args.push(value);
+  }
+
+  if (sets.length === 0) {
+    return NextResponse.json({ error: "Nothing to change" }, { status: 400 });
+  }
+
   const db = getDb();
-  await db.execute({
-    sql: "UPDATE orders SET status = ? WHERE id = ?",
-    args: [status, id],
+  const result = await db.execute({
+    sql: `UPDATE orders SET ${sets.join(", ")} WHERE id = ?`,
+    args: [...args, id],
   });
+  if (result.rowsAffected === 0) {
+    return NextResponse.json({ error: "That order wasn't found." }, { status: 404 });
+  }
   return NextResponse.json({ success: true });
 }
 
